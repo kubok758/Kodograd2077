@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Кодоград 2077 — Python Quest</title>
+  <style>
+    :root {
+      --bg: #070914;
+      --bg2: #0c1024;
+      --card: rgba(255, 255, 255, 0.08);
+      --card2: rgba(255, 255, 255, 0.12);
+      --border: rgba(255, 255, 255, 0.18);
+      --text: #f4f7ff;
+      --muted: rgba(244, 247, 255, 0.68);
+      --good: #52ffa8;
+      --bad: #ff5c7a;
+      --warn: #ffd166;
+      --accent: #7c5cff;
+      --accent2: #00e5ff;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      --radius: 28px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 12%, rgba(124, 92, 255, 0.35), transparent 30%),
+        radial-gradient(circle at 88% 8%, rgba(0, 229, 255, 0.24), transparent 26%),
+        radial-gradient(circle at 50% 95%, rgba(82, 255, 168, 0.12), transparent 34%),
+        linear-gradient(140deg, var(--bg), var(--bg2));
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(circle at center, black 20%, transparent 78%);
+      opacity: 0.8;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .app {
+      width: min(1180px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 22px 0 34px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(135deg, rgba(124, 92, 255, 0.95), rgba(0, 229, 255, 0.85));
+      box-shadow: 0 12px 40px rgba(0, 229, 255, 0.16);
+      font-size: 26px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(22px, 3.2vw, 34px);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .brand p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .btn {
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(124, 92, 255, 0.92), rgba(0, 229, 255, 0.68));
+      box-shadow: 0 12px 30px rgba(124, 92, 255, 0.16);
+      transition: 0.18s transform, 0.18s filter;
+      font-weight: 800;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    .btn.danger {
+      background: rgba(255, 92, 122, 0.18);
+      border: 1px solid rgba(255, 92, 122, 0.36);
+      box-shadow: none;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 390px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(24px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent 28%, transparent 70%, rgba(255,255,255,0.08));
+      opacity: 0.55;
+      mix-blend-mode: screen;
+    }
+
+    .panel-inner {
+      position: relative;
+      z-index: 1;
+      padding: 22px;
+    }
+
+    .hero {
+      min-height: 250px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .mission-title {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .level-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.28);
+      color: var(--accent2);
+      font-weight: 900;
+    }
+
+    .mission-title h2 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing: -0.04em;
+    }
+
+    .mission-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .story {
+      color: rgba(244, 247, 255, 0.86);
+      font-size: 16px;
+      line-height: 1.55;
+      margin: 12px 0 16px;
+    }
+
+    .goal-box {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .goal-box b {
+      color: var(--accent2);
+    }
+
+    .scene {
+      min-height: 230px;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 50% 28%, rgba(0, 229, 255, 0.28), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+
+    .city {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+
+    .building {
+      position: absolute;
+      bottom: 0;
+      width: 14%;
+      border-radius: 12px 12px 0 0;
+      background: linear-gradient(180deg, rgba(124,92,255,0.45), rgba(124,92,255,0.12));
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .building:nth-child(1) { left: 5%; height: 38%; }
+    .building:nth-child(2) { left: 23%; height: 62%; }
+    .building:nth-child(3) { left: 44%; height: 46%; }
+    .building:nth-child(4) { left: 63%; height: 70%; }
+    .building:nth-child(5) { left: 82%; height: 42%; }
+
+    .building::before {
+      content: "";
+      position: absolute;
+      inset: 12px 12px auto 12px;
+      height: 70%;
+      background-image: radial-gradient(circle, rgba(0,229,255,0.75) 2px, transparent 3px);
+      background-size: 18px 18px;
+      opacity: 0.25;
+    }
+
+    .robot {
+      position: relative;
+      z-index: 2;
+      width: 116px;
+      height: 138px;
+      animation: floaty 2.7s ease-in-out infinite;
+      filter: drop-shadow(0 18px 34px rgba(0,0,0,0.3));
+    }
+
+    .robot-head {
+      width: 92px;
+      height: 74px;
+      border-radius: 28px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(180,220,255,0.72));
+      border: 2px solid rgba(255,255,255,0.42);
+      position: relative;
+    }
+
+    .robot-head::before,
+    .robot-head::after {
+      content: "";
+      position: absolute;
+      top: 30px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 18px rgba(124, 92, 255, 0.8);
+    }
+
+    .robot-head::before { left: 24px; }
+    .robot-head::after { right: 24px; }
+
+    .robot-body {
+      width: 112px;
+      height: 58px;
+      border-radius: 24px;
+      margin: 6px auto 0;
+      background: linear-gradient(135deg, rgba(0,229,255,0.55), rgba(124,92,255,0.5));
+      border: 1px solid rgba(255,255,255,0.25);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-weight: 900;
+      letter-spacing: -0.08em;
+    }
+
+    .success-glow .robot-head,
+    .success-glow .robot-body {
+      box-shadow: 0 0 28px rgba(82,255,168,0.35), inset 0 0 30px rgba(82,255,168,0.16);
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .editor-wrap {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      overflow: hidden;
+    }
+
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+      font-size: 13px;
+      font-family: var(--mono);
+    }
+
+    .dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.28);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 238px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      color: #eaf2ff;
+      background: transparent;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.5;
+      tab-size: 4;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .console {
+      min-height: 238px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      padding: 16px;
+      font-family: var(--mono);
+      white-space: pre-wrap;
+      color: rgba(244,247,255,0.9);
+      line-height: 1.5;
+      overflow: auto;
+    }
+
+    .console.good {
+      border-color: rgba(82,255,168,0.36);
+      box-shadow: inset 0 0 0 1px rgba(82,255,168,0.08);
+    }
+
+    .console.bad {
+      border-color: rgba(255,92,122,0.38);
+      box-shadow: inset 0 0 0 1px rgba(255,92,122,0.08);
+    }
+
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .progress-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar {
+      height: 14px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--good));
+      transition: 0.25s width;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .map {
+      display: grid;
+      gap: 9px;
+    }
+
+    .map-item {
+      width: 100%;
+      text-align: left;
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: 0.16s transform, 0.16s background, 0.16s border-color;
+    }
+
+    .map-item:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .map-item.active {
+      border-color: rgba(0,229,255,0.45);
+      background: rgba(0,229,255,0.1);
+    }
+
+    .map-item.locked {
+      opacity: 0.46;
+      cursor: not-allowed;
+    }
+
+    .map-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.1);
+      font-size: 16px;
+    }
+
+    .map-item-title {
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .map-item-subtitle {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .lesson {
+      color: rgba(244,247,255,0.82);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .lesson code,
+    .chips code {
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.32);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #dff8ff;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .chip {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 20;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(14px);
+      padding: 18px;
+    }
+
+    .modal.show {
+      display: grid;
+    }
+
+    .modal-card {
+      width: min(560px, 100%);
+      background: rgba(14, 18, 40, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modal-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 35% 35%, rgba(0,229,255,0.16), transparent 26%),
+        radial-gradient(circle at 70% 65%, rgba(124,92,255,0.24), transparent 30%);
+      pointer-events: none;
+    }
+
+    .modal-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .modal h2 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+
+    .modal p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(18, 24, 50, 0.92);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(18px);
+      border-radius: 18px;
+      padding: 12px 15px;
+      box-shadow: var(--shadow);
+      transition: 0.22s opacity, 0.22s transform;
+      z-index: 30;
+      max-width: min(92vw, 560px);
+      color: rgba(244,247,255,0.92);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .mobile-tabs {
+      display: none;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .hidden-mobile {
+      display: block;
+    }
+
+    @media (max-width: 940px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hero,
+      .workbench {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        width: min(100vw - 18px, 1180px);
+        padding-top: 12px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .panel-inner {
+        padding: 16px;
+      }
+
+      .brand h1 {
+        font-size: 25px;
+      }
+
+      .brand p {
+        font-size: 13px;
+      }
+
+      .logo {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+      }
+
+      textarea {
+        min-height: 230px;
+        font-size: 14px;
+      }
+
+      .console {
+        min-height: 190px;
+      }
+
+      .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">🐍</div>
+        <div>
+          <h1>Кодоград 2077</h1>
+          <p>Мини-игра для изучения Python без бэкенда</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="pill" id="saveStatus">Прогресс загружен</div>
+        <button class="btn secondary" id="aboutBtn">О игре</button>
+        <button class="btn danger" id="resetBtn">Сброс</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section>
+        <div class="panel">
+          <div class="panel-inner">
+            <div class="hero">
+              <div>
+                <div class="mission-title">
+                  <div class="level-badge" id="levelNumber">1</div>
+                  <div>
+                    <h2 id="missionTitle">Загрузка...</h2>
+                    <p id="missionTopic">Python</p>
+                  </div>
+                </div>
+
+                <p class="story" id="missionStory"></p>
+
+                <div class="goal-box">
+                  <b>Задание:</b>
+                  <span id="missionGoal"></span>
+                </div>
+
+                <div class="chips" id="chips"></div>
+              </div>
+
+              <div class="scene" id="scene">
+                <div class="city">
+                  <div class="building"></div>
+                  <div class="building"></div>
+                  <div class="building"></div>
+                  <div class="building"></div>
+                  <div class="building"></div>
+                </div>
+                <div class="robot" id="robot">
+                  <div class="robot-head"></div>
+                  <div class="robot-body" id="robotText">PY</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="workbench">
+          <div class="panel">
+            <div class="panel-inner">
+              <h3 class="section-title">Редактор кода</h3>
+              <div class="editor-wrap">
+                <div class="editor-head">
+                  <div class="dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                  </div>
+                  <span>main.py</span>
+                </div>
+                <textarea id="codeEditor" spellcheck="false"></textarea>
+              </div>
+
+              <div class="editor-actions">
+                <button class="btn" id="runBtn">▶ Запустить</button>
+                <button class="btn secondary" id="hintBtn">💡 Подсказка</button>
+                <button class="btn secondary" id="fillBtn">🧩 Вставить пример</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-inner">
+              <h3 class="section-title">Консоль и результат</h3>
+              <div class="console" id="console">Напиши код и нажми «Запустить».</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <div class="panel">
+          <div class="panel-inner progress-card">
+            <h3 class="section-title">Прогресс города</h3>
+            <div class="bar">
+              <div class="bar-fill" id="progressFill"></div>
+            </div>
+
+            <div class="stats">
+              <div class="stat">
+                <b id="completedCount">0</b>
+                <span>районов восстановлено</span>
+              </div>
+              <div class="stat">
+                <b id="starsCount">0</b>
+                <span>звёзд заработано</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-inner">
+            <h3 class="section-title">Карта уровней</h3>
+            <div class="map" id="levelMap"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-inner">
+            <h3 class="section-title">Мини-урок</h3>
+            <div class="lesson" id="lessonText"></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <div class="modal-content">
+        <h2 id="modalTitle">Готово!</h2>
+        <p id="modalText"></p>
+        <div class="modal-actions">
+          <button class="btn" id="nextBtn">Следующий уровень</button>
+          <button class="btn secondary" id="closeModalBtn">Остаться тут</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "kodograd2077_progress_v1";
+
+    const levels = [
+      {
+        title: "Робот-продавец",
+        topic: "print()",
+        icon: "🤖",
+        story: "В торговом районе пропал голосовой модуль. Робот должен снова поприветствовать жителей Кодограда.",
+        goal: "Выведи в консоль текст: Привет, Кодоград!",
+        lesson: "Функция <code>print()</code> выводит текст на экран. Текст нужно писать в кавычках: <code>print(\"Привет\")</code>.",
+        starter: "# Напиши команду вывода ниже\n",
+        sample: "print(\"Привет, Кодоград!\")",
+        hints: [
+          "Используй функцию print().",
+          "Текст должен быть в кавычках.",
+          "Нужная строка: print(\"Привет, Кодоград!\")"
+        ],
+        chips: ["print()", "строки", "кавычки"],
+        validate(code) {
+          const printed = simulatePrints(code);
+          return printed.some(line => line.trim() === "Привет, Кодоград!");
+        },
+        success: "Голосовой модуль восстановлен. Робот снова здоровается с городом."
+      },
+      {
+        title: "Батарея дрона",
+        topic: "переменные",
+        icon: "🔋",
+        story: "Дрон-разведчик завис над площадью. Чтобы он полетел дальше, нужно задать уровень энергии.",
+        goal: "Создай переменную energy со значением 100.",
+        lesson: "Переменная — это имя для значения. В Python пишут так: <code>energy = 100</code>. Слева имя, справа значение.",
+        starter: "# Создай переменную energy\n",
+        sample: "energy = 100\nprint(energy)",
+        hints: [
+          "Переменная называется energy.",
+          "Ей нужно присвоить число 100.",
+          "Правильно: energy = 100"
+        ],
+        chips: ["переменная", "число", "="],
+        validate(code) {
+          const vars = simulateAssignments(code);
+          return vars.energy === 100;
+        },
+        success: "Дрон зарядился на 100% и поднялся над городом."
+      },
+      {
+        title: "Сканер доступа",
+        topic: "if",
+        icon: "🚪",
+        story: "Дверь в лабораторию закрыта. Система должна открыть её только при наличии ключа.",
+        goal: "Создай has_key = True и напиши условие if has_key:, внутри которого вызывается open_door().",
+        lesson: "Условие <code>if</code> выполняет код только если значение истинное. После условия ставится двоеточие, а следующая строка пишется с отступом.",
+        starter: "# Открой дверь, если ключ есть\n",
+        sample: "has_key = True\n\nif has_key:\n    open_door()",
+        hints: [
+          "Сначала создай переменную has_key = True.",
+          "Потом напиши if has_key:",
+          "Внутри if с отступом вызови open_door()."
+        ],
+        chips: ["if", "True", "отступ"],
+        validate(code) {
+          const normalized = normalizeCode(code);
+          const hasVar = /has_key\s*=\s*True/.test(code);
+          const hasIf = /if\s+has_key\s*:/.test(code);
+          const hasAction = /if\s+has_key\s*:\s*\n[ \t]+open_door\s*\(\s*\)/.test(code);
+          return hasVar && hasIf && hasAction && !normalized.includes("if has_key:open_door()");
+        },
+        success: "Сканер принял ключ. Лаборатория снова открыта."
+      },
+      {
+        title: "Фабрика деталей",
+        topic: "for",
+        icon: "🏭",
+        story: "Фабрика не выпускает детали для ремонта города. Нужно повторить сборку несколько раз.",
+        goal: "С помощью цикла for вызови collect() ровно 5 раз.",
+        lesson: "Цикл <code>for</code> повторяет код. Например, <code>for i in range(5):</code> выполнит блок 5 раз.",
+        starter: "# Собери 5 деталей циклом\n",
+        sample: "for i in range(5):\n    collect()",
+        hints: [
+          "Нужен цикл for.",
+          "Используй range(5).",
+          "Внутри цикла с отступом вызови collect()."
+        ],
+        chips: ["for", "range()", "повторение"],
+        validate(code) {
+          return /for\s+\w+\s+in\s+range\s*\(\s*5\s*\)\s*:\s*\n[ \t]+collect\s*\(\s*\)/.test(code);
+        },
+        success: "Фабрика собрала 5 деталей и запустила ремонтный конвейер."
+      },
+      {
+        title: "Список запчастей",
+        topic: "списки",
+        icon: "📦",
+        story: "Склад потерял список запчастей. Нужно создать список, чтобы роботы знали, что доставлять.",
+        goal: "Создай список parts, в котором есть строки: wheel, sensor, cable.",
+        lesson: "Список хранит несколько значений: <code>parts = [\"wheel\", \"sensor\", \"cable\"]</code>. Элементы разделяются запятыми.",
+        starter: "# Создай список parts\n",
+        sample: "parts = [\"wheel\", \"sensor\", \"cable\"]\nprint(parts)",
+        hints: [
+          "Список пишется в квадратных скобках.",
+          "Элементы должны быть строками в кавычках.",
+          "Нужно имя parts."
+        ],
+        chips: ["list", "[]", "строки"],
+        validate(code) {
+          const list = extractList(code, "parts");
+          if (!list) return false;
+          return ["wheel", "sensor", "cable"].every(item => list.includes(item));
+        },
+        success: "Склад снова видит запчасти. Логистика восстановлена."
+      },
+      {
+        title: "Функция ремонта",
+        topic: "функции",
+        icon: "🛠️",
+        story: "Инженеры устали писать один и тот же код ремонта. Нужно создать функцию.",
+        goal: "Создай функцию repair(), внутри которой вызывается print(\"Ремонт завершён\"). Потом вызови repair().",
+        lesson: "Функция — это блок кода с именем. Её создают через <code>def</code>, а запускают вызовом: <code>repair()</code>.",
+        starter: "# Создай и вызови функцию repair\n",
+        sample: "def repair():\n    print(\"Ремонт завершён\")\n\nrepair()",
+        hints: [
+          "Начни с def repair():",
+          "Внутри функции нужен отступ.",
+          "После функции отдельно вызови repair()."
+        ],
+        chips: ["def", "функция", "вызов"],
+        validate(code) {
+          const hasDef = /def\s+repair\s*\(\s*\)\s*:/.test(code);
+          const hasPrintInside = /def\s+repair\s*\(\s*\)\s*:\s*\n[ \t]+print\s*\(\s*["']Ремонт заверш[ёе]н["']\s*\)/.test(code);
+          const withoutDefBlock = code.replace(/def\s+repair\s*\(\s*\)\s*:\s*\n[ \t]+print\s*\(\s*["']Ремонт заверш[ёе]н["']\s*\)/, "");
+          const hasCall = /(^|\n)\s*repair\s*\(\s*\)/.test(withoutDefBlock);
+          return hasDef && hasPrintInside && hasCall;
+        },
+        success: "Функция ремонта добавлена. Теперь город чинится одной командой."
+      },
+      {
+        title: "Финальный запуск",
+        topic: "комбинация основ",
+        icon: "⚡",
+        story: "Центральный ИИ почти восстановлен. Осталось запустить все системы через переменные, условие и цикл.",
+        goal: "Создай energy = 3. Если energy > 0, циклом for i in range(energy): вызови start_system().",
+        lesson: "В реальном коде темы смешиваются: переменные хранят данные, условия принимают решения, циклы повторяют действия.",
+        starter: "# Финальный запуск Кодограда\n",
+        sample: "energy = 3\n\nif energy > 0:\n    for i in range(energy):\n        start_system()",
+        hints: [
+          "Сначала energy = 3.",
+          "Потом условие if energy > 0:",
+          "Внутри условия цикл for i in range(energy):, а внутри цикла start_system()."
+        ],
+        chips: ["переменные", "if", "for"],
+        validate(code) {
+          const hasEnergy = /energy\s*=\s*3/.test(code);
+          const hasIf = /if\s+energy\s*>\s*0\s*:/.test(code);
+          const hasLoop = /if\s+energy\s*>\s*0\s*:\s*\n[ \t]+for\s+\w+\s+in\s+range\s*\(\s*energy\s*\)\s*:\s*\n[ \t]+[ \t]+start_system\s*\(\s*\)/.test(code);
+          return hasEnergy && hasIf && hasLoop;
+        },
+        success: "Центральный ИИ запущен. Кодоград 2077 полностью восстановлен!"
+      }
+    ];
+
+    let state = loadState();
+    let currentLevelIndex = Math.min(state.currentLevelIndex, levels.length - 1);
+    let hintIndex = 0;
+
+    const levelNumber = document.getElementById("levelNumber");
+    const missionTitle = document.getElementById("missionTitle");
+    const missionTopic = document.getElementById("missionTopic");
+    const missionStory = document.getElementById("missionStory");
+    const missionGoal = document.getElementById("missionGoal");
+    const lessonText = document.getElementById("lessonText");
+    const codeEditor = document.getElementById("codeEditor");
+    const consoleEl = document.getElementById("console");
+    const levelMap = document.getElementById("levelMap");
+    const progressFill = document.getElementById("progressFill");
+    const completedCount = document.getElementById("completedCount");
+    const starsCount = document.getElementById("starsCount");
+    const saveStatus = document.getElementById("saveStatus");
+    const robot = document.getElementById("robot");
+    const robotText = document.getElementById("robotText");
+    const scene = document.getElementById("scene");
+    const chips = document.getElementById("chips");
+    const modal = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalText = document.getElementById("modalText");
+    const toast = document.getElementById("toast");
+
+    document.getElementById("runBtn").addEventListener("click", runCode);
+    document.getElementById("hintBtn").addEventListener("click", showHint);
+    document.getElementById("fillBtn").addEventListener("click", fillSample);
+    document.getElementById("resetBtn").addEventListener("click", resetGame);
+    document.getElementById("aboutBtn").addEventListener("click", showAbout);
+    document.getElementById("nextBtn").addEventListener("click", nextLevel);
+    document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+
+    codeEditor.addEventListener("keydown", event => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        const start = codeEditor.selectionStart;
+        const end = codeEditor.selectionEnd;
+        codeEditor.value = codeEditor.value.slice(0, start) + "    " + codeEditor.value.slice(end);
+        codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        runCode();
+      }
+    });
+
+    codeEditor.addEventListener("input", () => {
+      state.drafts[currentLevelIndex] = codeEditor.value;
+      saveState();
+    });
+
+    render();
+
+    function loadState() {
+      const base = {
+        currentLevelIndex: 0,
+        completed: [],
+        stars: 0,
+        drafts: {}
+      };
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved || typeof saved !== "object") return base;
+        return {
+          currentLevelIndex: Number.isInteger(saved.currentLevelIndex) ? saved.currentLevelIndex : 0,
+          completed: Array.isArray(saved.completed) ? saved.completed : [],
+          stars: Number.isInteger(saved.stars) ? saved.stars : 0,
+          drafts: saved.drafts && typeof saved.drafts === "object" ? saved.drafts : {}
+        };
+      } catch {
+        return base;
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      saveStatus.textContent = "Прогресс сохранён";
+      clearTimeout(saveState.timer);
+      saveState.timer = setTimeout(() => {
+        saveStatus.textContent = "Игра работает офлайн";
+      }, 1200);
+    }
+
+    function render() {
+      const level = levels[currentLevelIndex];
+
+      levelNumber.textContent = currentLevelIndex + 1;
+      missionTitle.textContent = level.title;
+      missionTopic.textContent = level.topic;
+      missionStory.textContent = level.story;
+      missionGoal.textContent = " " + level.goal;
+      lessonText.innerHTML = level.lesson;
+      robotText.textContent = level.icon;
+      hintIndex = 0;
+
+      chips.innerHTML = "";
+      level.chips.forEach(text => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = text;
+        chips.appendChild(chip);
+      });
+
+      const draft = state.drafts[currentLevelIndex];
+      codeEditor.value = typeof draft === "string" ? draft : level.starter;
+
+      renderMap();
+      renderProgress();
+
+      consoleEl.className = "console";
+      consoleEl.textContent = "Напиши код и нажми «Запустить». Можно нажать Ctrl/⌘ + Enter.";
+      robot.classList.remove("success-glow");
+    }
+
+    function renderMap() {
+      levelMap.innerHTML = "";
+
+      levels.forEach((level, index) => {
+        const unlocked = isUnlocked(index);
+        const done = state.completed.includes(index);
+        const item = document.createElement("button");
+        item.className = "map-item";
+        if (index === currentLevelIndex) item.classList.add("active");
+        if (!unlocked) item.classList.add("locked");
+
+        item.innerHTML = `
+          <div class="map-icon">${done ? "✅" : level.icon}</div>
+          <div>
+            <div class="map-item-title">${index + 1}. ${level.title}</div>
+            <div class="map-item-subtitle">${level.topic}</div>
+          </div>
+          <div class="status">${done ? "готово" : unlocked ? "открыт" : "замок"}</div>
+        `;
+
+        item.addEventListener("click", () => {
+          if (!unlocked) {
+            showToast("Этот район пока закрыт. Пройди предыдущие уровни.");
+            return;
+          }
+
+          currentLevelIndex = index;
+          state.currentLevelIndex = index;
+          saveState();
+          render();
+        });
+
+        levelMap.appendChild(item);
+      });
+    }
+
+    function renderProgress() {
+      const completed = state.completed.length;
+      const percent = Math.round((completed / levels.length) * 100);
+      progressFill.style.width = `${percent}%`;
+      completedCount.textContent = completed;
+      starsCount.textContent = state.stars;
+    }
+
+    function isUnlocked(index) {
+      if (index === 0) return true;
+      return state.completed.includes(index - 1);
+    }
+
+    function runCode() {
+      const level = levels[currentLevelIndex];
+      const code = codeEditor.value;
+      const output = buildOutput(code);
+
+      let passed = false;
+
+      try {
+        passed = level.validate(code);
+      } catch {
+        passed = false;
+      }
+
+      if (passed) {
+        consoleEl.className = "console good";
+        consoleEl.textContent = output + "\n\n✅ Уровень пройден!\n" + level.success;
+        robot.classList.add("success-glow");
+
+        if (!state.completed.includes(currentLevelIndex)) {
+          state.completed.push(currentLevelIndex);
+          state.stars += 3;
+        }
+
+        state.currentLevelIndex = Math.max(state.currentLevelIndex, currentLevelIndex);
+        saveState();
+        renderProgress();
+        renderMap();
+
+        setTimeout(() => {
+          showSuccessModal(level.success);
+        }, 450);
+      } else {
+        consoleEl.className = "console bad";
+        consoleEl.textContent = output + "\n\n❌ Код пока не решает задачу.\nПроверь задание, отступы и названия переменных.";
+        shake(scene);
+      }
+    }
+
+    function buildOutput(code) {
+      const lines = simulatePrints(code);
+      const events = [];
+
+      if (/open_door\s*\(\s*\)/.test(code)) {
+        events.push("🚪 open_door() → дверь открывается");
+      }
+
+      const collectMatch = code.match(/range\s*\(\s*(\d+)\s*\)[\s\S]*?collect\s*\(\s*\)/);
+      if (collectMatch) {
+        const count = Number(collectMatch[1]);
+        events.push(`🏭 collect() → собрано деталей: ${count}`);
+      }
+
+      if (/start_system\s*\(\s*\)/.test(code)) {
+        const energyMatch = code.match(/energy\s*=\s*(\d+)/);
+        const count = energyMatch ? Number(energyMatch[1]) : 1;
+        events.push(`⚡ start_system() → систем запущено: ${count}`);
+      }
+
+      const visible = [];
+      visible.push("=== Консоль ===");
+
+      if (lines.length === 0 && events.length === 0) {
+        visible.push("(пока нет вывода)");
+      } else {
+        lines.forEach(line => visible.push(line));
+        events.forEach(event => visible.push(event));
+      }
+
+      return visible.join("\n");
+    }
+
+    function simulatePrints(code) {
+      const lines = [];
+      const printRegex = /print\s*\(\s*(["'`])([\s\S]*?)\1\s*\)/g;
+      let match;
+
+      while ((match = printRegex.exec(code)) !== null) {
+        lines.push(match[2]);
+      }
+
+      const printNumberRegex = /print\s*\(\s*([a-zA-Z_]\w*)\s*\)/g;
+      let numberMatch;
+      const vars = simulateAssignments(code);
+
+      while ((numberMatch = printNumberRegex.exec(code)) !== null) {
+        const name = numberMatch[1];
+        if (Object.prototype.hasOwnProperty.call(vars, name)) {
+          lines.push(String(vars[name]));
+        }
+      }
+
+      return lines;
+    }
+
+    function simulateAssignments(code) {
+      const vars = {};
+      const regex = /^\s*([a-zA-Z_]\w*)\s*=\s*(True|False|-?\d+(?:\.\d+)?)\s*$/gm;
+      let match;
+
+      while ((match = regex.exec(code)) !== null) {
+        const name = match[1];
+        const raw = match[2];
+
+        if (raw === "True") vars[name] = true;
+        else if (raw === "False") vars[name] = false;
+        else vars[name] = Number(raw);
+      }
+
+      return vars;
+    }
+
+    function extractList(code, name) {
+      const regex = new RegExp(`${name}\\s*=\\s*\\[([\\s\\S]*?)\\]`);
+      const match = code.match(regex);
+      if (!match) return null;
+
+      const content = match[1];
+      const items = [];
+      const itemRegex = /["']([^"']+)["']/g;
+      let item;
+
+      while ((item = itemRegex.exec(content)) !== null) {
+        items.push(item[1]);
+      }
+
+      return items;
+    }
+
+    function normalizeCode(code) {
+      return code.replace(/\s+/g, "");
+    }
+
+    function showHint() {
+      const level = levels[currentLevelIndex];
+      const hint = level.hints[Math.min(hintIndex, level.hints.length - 1)];
+      hintIndex++;
+      showToast("💡 " + hint);
+    }
+
+    function fillSample() {
+      const level = levels[currentLevelIndex];
+      codeEditor.value = level.sample;
+      state.drafts[currentLevelIndex] = codeEditor.value;
+      saveState();
+      showToast("Пример вставлен. Теперь нажми «Запустить».");
+    }
+
+    function showSuccessModal(text) {
+      const isLast = currentLevelIndex === levels.length - 1;
+      modalTitle.textContent = isLast ? "Кодоград восстановлен!" : "Район восстановлен!";
+      modalText.textContent = text;
+
+      const nextBtn = document.getElementById("nextBtn");
+      nextBtn.textContent = isLast ? "Играть заново" : "Следующий уровень";
+
+      modal.classList.add("show");
+    }
+
+    function nextLevel() {
+      const isLast = currentLevelIndex === levels.length - 1;
+
+      if (isLast) {
+        currentLevelIndex = 0;
+        state.currentLevelIndex = 0;
+      } else {
+        currentLevelIndex++;
+        state.currentLevelIndex = currentLevelIndex;
+      }
+
+      saveState();
+      closeModal();
+      render();
+    }
+
+    function closeModal() {
+      modal.classList.remove("show");
+    }
+
+    function showAbout() {
+      modalTitle.textContent = "О игре";
+      modalText.textContent =
+        "Это обучающая веб-игра по Python для новичков. Она полностью работает в браузере: без сервера, без регистрации и без базы данных. Проверка кода учебная: игра распознаёт нужные конструкции Python и показывает результат в мире Кодограда.";
+      document.getElementById("nextBtn").textContent = "Понятно";
+      modal.classList.add("show");
+
+      const oldHandler = nextLevel;
+      const nextBtn = document.getElementById("nextBtn");
+      nextBtn.onclick = () => {
+        closeModal();
+        nextBtn.onclick = nextLevel;
+      };
+    }
+
+    function resetGame() {
+      const ok = confirm("Сбросить весь прогресс?");
+      if (!ok) return;
+
+      localStorage.removeItem(STORAGE_KEY);
+      state = loadState();
+      currentLevelIndex = 0;
+      saveState();
+      render();
+      showToast("Прогресс сброшен.");
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2800);
+    }
+
+    function shake(element) {
+      element.animate(
+        [
+          { transform: "translateX(0)" },
+          { transform: "translateX(-8px)" },
+          { transform: "translateX(8px)" },
+          { transform: "translateX(-5px)" },
+          { transform: "translateX(0)" }
+        ],
+        {
+          duration: 330,
+          easing: "ease-out"
+        }
+      );
+    }
+  </script>
+</body>
+</html>
