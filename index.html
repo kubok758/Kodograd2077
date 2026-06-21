@@ -1,0 +1,2673 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Кодоград 2077 — Python Duolingo Edition</title>
+  <meta name="theme-color" content="#070914" />
+  <meta name="description" content="Python-тренажёр в стиле Duolingo: 1200 уровней, звёзды, магазин, PWA и офлайн-режим." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Кодоград" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <style>
+    :root {
+      --bg: #070914;
+      --bg2: #0c1024;
+      --card: rgba(255, 255, 255, 0.085);
+      --card2: rgba(255, 255, 255, 0.13);
+      --border: rgba(255, 255, 255, 0.17);
+      --text: #f4f7ff;
+      --muted: rgba(244, 247, 255, 0.68);
+      --good: #52ffa8;
+      --bad: #ff5c7a;
+      --warn: #ffd166;
+      --accent: #7c5cff;
+      --accent2: #00e5ff;
+      --coin: #ffd166;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      --radius: 28px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body[data-theme="emerald"] {
+      --bg: #03150f;
+      --bg2: #08251c;
+      --accent: #21d07a;
+      --accent2: #7dffcb;
+    }
+
+    body[data-theme="sunset"] {
+      --bg: #190910;
+      --bg2: #2c101a;
+      --accent: #ff5c7a;
+      --accent2: #ffd166;
+    }
+
+    body[data-theme="mono"] {
+      --bg: #070707;
+      --bg2: #171717;
+      --accent: #d8d8d8;
+      --accent2: #ffffff;
+    }
+
+    body[data-theme="ice"] {
+      --bg: #05111b;
+      --bg2: #0a2034;
+      --accent: #79a8ff;
+      --accent2: #9df7ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--accent) 42%, transparent), transparent 31%),
+        radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--accent2) 30%, transparent), transparent 27%),
+        radial-gradient(circle at 50% 95%, rgba(82, 255, 168, 0.12), transparent 34%),
+        linear-gradient(140deg, var(--bg), var(--bg2));
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.032) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(circle at center, black 18%, transparent 80%);
+      opacity: 0.9;
+    }
+
+    button,
+    textarea,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .app {
+      width: min(1240px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 18px 0 34px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 54px;
+      height: 54px;
+      border-radius: 19px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--accent) 94%, white 5%), color-mix(in srgb, var(--accent2) 88%, white 2%));
+      box-shadow: 0 12px 40px color-mix(in srgb, var(--accent2) 20%, transparent);
+      font-size: 27px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      line-height: 1;
+      letter-spacing: -0.045em;
+    }
+
+    .brand p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .top-actions,
+    .stat-strip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      padding: 10px 13px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      color: rgba(244,247,255,0.82);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .pill strong {
+      color: var(--text);
+    }
+
+    .pill.coin strong {
+      color: var(--coin);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .tab {
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      white-space: nowrap;
+      font-weight: 800;
+    }
+
+    .tab.active {
+      color: var(--text);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 70%, transparent), color-mix(in srgb, var(--accent2) 38%, transparent));
+      border-color: color-mix(in srgb, var(--accent2) 45%, transparent);
+    }
+
+    .btn {
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 94%, white 3%), color-mix(in srgb, var(--accent2) 70%, transparent));
+      box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 18%, transparent);
+      transition: 0.18s transform, 0.18s filter;
+      font-weight: 900;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      box-shadow: none;
+      font-weight: 800;
+    }
+
+    .btn.danger {
+      background: rgba(255, 92, 122, 0.18);
+      border: 1px solid rgba(255, 92, 122, 0.36);
+      box-shadow: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 410px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(24px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent 28%, transparent 70%, rgba(255,255,255,0.08));
+      opacity: 0.55;
+      mix-blend-mode: screen;
+    }
+
+    .panel-inner {
+      position: relative;
+      z-index: 1;
+      padding: 21px;
+    }
+
+    .hero {
+      min-height: 250px;
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .mission-title {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .level-badge {
+      width: 46px;
+      height: 46px;
+      border-radius: 17px;
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--accent2) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent2) 30%, transparent);
+      color: var(--accent2);
+      font-weight: 1000;
+      font-size: 15px;
+    }
+
+    .mission-title h2 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing: -0.04em;
+    }
+
+    .mission-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .story {
+      color: rgba(244, 247, 255, 0.86);
+      font-size: 16px;
+      line-height: 1.55;
+      margin: 12px 0 16px;
+    }
+
+    .goal-box {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .goal-box b {
+      color: var(--accent2);
+    }
+
+    .scene {
+      min-height: 232px;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--accent2) 31%, transparent), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+
+    .city {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+
+    .building {
+      position: absolute;
+      bottom: 0;
+      width: 14%;
+      border-radius: 12px 12px 0 0;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 45%, transparent), color-mix(in srgb, var(--accent) 12%, transparent));
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .building:nth-child(1) { left: 5%; height: 38%; }
+    .building:nth-child(2) { left: 23%; height: 62%; }
+    .building:nth-child(3) { left: 44%; height: 46%; }
+    .building:nth-child(4) { left: 63%; height: 70%; }
+    .building:nth-child(5) { left: 82%; height: 42%; }
+
+    .building::before {
+      content: "";
+      position: absolute;
+      inset: 12px 12px auto 12px;
+      height: 70%;
+      background-image: radial-gradient(circle, color-mix(in srgb, var(--accent2) 75%, transparent) 2px, transparent 3px);
+      background-size: 18px 18px;
+      opacity: 0.28;
+    }
+
+    .robot {
+      position: relative;
+      z-index: 2;
+      width: 116px;
+      height: 138px;
+      animation: floaty 2.7s ease-in-out infinite;
+      filter: drop-shadow(0 18px 34px rgba(0,0,0,0.3));
+    }
+
+    .robot-head {
+      width: 94px;
+      height: 74px;
+      border-radius: 28px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(180,220,255,0.72));
+      border: 2px solid rgba(255,255,255,0.42);
+      position: relative;
+    }
+
+    .robot-head::before,
+    .robot-head::after {
+      content: "";
+      position: absolute;
+      top: 30px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 80%, transparent);
+    }
+
+    .robot-head::before { left: 24px; }
+    .robot-head::after { right: 24px; }
+
+    .robot-body {
+      width: 112px;
+      height: 58px;
+      border-radius: 24px;
+      margin: 6px auto 0;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent2) 55%, transparent), color-mix(in srgb, var(--accent) 50%, transparent));
+      border: 1px solid rgba(255,255,255,0.25);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-weight: 1000;
+      letter-spacing: -0.06em;
+      font-size: 25px;
+    }
+
+    .success-glow .robot-head,
+    .success-glow .robot-body {
+      box-shadow: 0 0 28px rgba(82,255,168,0.36), inset 0 0 30px rgba(82,255,168,0.16);
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .editor-wrap {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      overflow: hidden;
+    }
+
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+      font-size: 13px;
+      font-family: var(--mono);
+    }
+
+    .dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.28);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 270px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      color: #eaf2ff;
+      background: transparent;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.5;
+      tab-size: 4;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .console {
+      min-height: 270px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      padding: 16px;
+      font-family: var(--mono);
+      white-space: pre-wrap;
+      color: rgba(244,247,255,0.9);
+      line-height: 1.5;
+      overflow: auto;
+    }
+
+    .console.good {
+      border-color: rgba(82,255,168,0.36);
+      box-shadow: inset 0 0 0 1px rgba(82,255,168,0.08);
+    }
+
+    .console.bad {
+      border-color: rgba(255,92,122,0.38);
+      box-shadow: inset 0 0 0 1px rgba(255,92,122,0.08);
+    }
+
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .progress-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar {
+      height: 14px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--good));
+      transition: 0.25s width;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .unit-nav {
+      display: grid;
+      gap: 10px;
+    }
+
+    .unit-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .unit-line h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.025em;
+    }
+
+    .unit-line p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.24);
+      color: var(--text);
+      outline: none;
+    }
+
+    .select option {
+      color: #111;
+    }
+
+    .path {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .path-item {
+      width: 100%;
+      text-align: left;
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: 0.16s transform, 0.16s background, 0.16s border-color;
+    }
+
+    .path-item:nth-child(odd) {
+      margin-left: 18px;
+      width: calc(100% - 18px);
+    }
+
+    .path-item:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .path-item.active {
+      border-color: color-mix(in srgb, var(--accent2) 50%, transparent);
+      background: color-mix(in srgb, var(--accent2) 12%, transparent);
+    }
+
+    .path-item.locked {
+      opacity: 0.44;
+      cursor: not-allowed;
+    }
+
+    .path-item-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.1);
+      font-size: 18px;
+    }
+
+    .path-item-title {
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .path-item-subtitle {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stars-small {
+      font-size: 12px;
+      color: var(--coin);
+      white-space: nowrap;
+    }
+
+    .lesson {
+      color: rgba(244,247,255,0.82);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .lesson code,
+    .chips code {
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.32);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #dff8ff;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .chip {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .shop-card,
+    .achievement-card {
+      background: rgba(255,255,255,0.075);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 16px;
+      min-height: 170px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .shop-icon {
+      font-size: 34px;
+      margin-bottom: 6px;
+    }
+
+    .shop-card h3,
+    .achievement-card h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .shop-card p,
+    .achievement-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .shop-bottom {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cost {
+      color: var(--coin);
+      font-weight: 1000;
+      white-space: nowrap;
+    }
+
+    .mini {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stats-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .big-number {
+      font-size: 44px;
+      font-weight: 1000;
+      letter-spacing: -0.07em;
+      margin: 4px 0 0;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 20;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(14px);
+      padding: 18px;
+    }
+
+    .modal.show {
+      display: grid;
+    }
+
+    .modal-card {
+      width: min(600px, 100%);
+      background: rgba(14, 18, 40, 0.94);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modal-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--accent2) 18%, transparent), transparent 26%),
+        radial-gradient(circle at 70% 65%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 30%);
+      pointer-events: none;
+    }
+
+    .modal-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .modal h2 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+
+    .modal p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .reward-line {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .reward {
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-weight: 900;
+    }
+
+    .reward.coin {
+      color: var(--coin);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(18, 24, 50, 0.94);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(18px);
+      border-radius: 18px;
+      padding: 12px 15px;
+      box-shadow: var(--shadow);
+      transition: 0.22s opacity, 0.22s transform;
+      z-index: 30;
+      max-width: min(92vw, 580px);
+      color: rgba(244,247,255,0.92);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 1040px) {
+      .layout,
+      .stats-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hero,
+      .workbench {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        grid-template-columns: 1fr;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 660px) {
+      .app {
+        width: min(100vw - 18px, 1240px);
+        padding-top: 12px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-actions,
+      .stat-strip {
+        justify-content: flex-start;
+      }
+
+      .panel-inner {
+        padding: 16px;
+      }
+
+      .brand h1 {
+        font-size: 25px;
+      }
+
+      .brand p {
+        font-size: 13px;
+      }
+
+      .logo {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+      }
+
+      textarea {
+        min-height: 250px;
+        font-size: 14px;
+      }
+
+      .console {
+        min-height: 210px;
+      }
+
+      .btn {
+        flex: 1;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .path-item:nth-child(odd) {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">🐍</div>
+        <div>
+          <h1>Кодоград 2077</h1>
+          <p>Python-тренажёр в стиле Duolingo · 1200 уровней · без бэкенда</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="pill coin">⭐ <strong id="topStars">0</strong></div>
+        <div class="pill">🔥 <strong id="topStreak">0</strong> дней</div>
+        <div class="pill">XP <strong id="topXp">0</strong></div>
+        <button class="btn secondary" id="installBtn">📲 Установить</button>
+        <button class="btn secondary" id="aboutBtn">О игре</button>
+        <button class="btn danger" id="resetBtn">Сброс</button>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="learn">🏙️ Учиться</button>
+      <button class="tab" data-view="shop">🛒 Магазин звёзд</button>
+      <button class="tab" data-view="stats">📊 Статистика</button>
+    </nav>
+
+    <section class="view active" id="learnView">
+      <main class="layout">
+        <section>
+          <div class="panel">
+            <div class="panel-inner">
+              <div class="hero">
+                <div>
+                  <div class="mission-title">
+                    <div class="level-badge" id="levelNumber">1</div>
+                    <div>
+                      <h2 id="missionTitle">Загрузка...</h2>
+                      <p id="missionTopic">Python</p>
+                    </div>
+                  </div>
+
+                  <p class="story" id="missionStory"></p>
+
+                  <div class="goal-box">
+                    <b>Задание:</b>
+                    <span id="missionGoal"></span>
+                  </div>
+
+                  <div class="chips" id="chips"></div>
+                </div>
+
+                <div class="scene" id="scene">
+                  <div class="city">
+                    <div class="building"></div>
+                    <div class="building"></div>
+                    <div class="building"></div>
+                    <div class="building"></div>
+                    <div class="building"></div>
+                  </div>
+                  <div class="robot" id="robot">
+                    <div class="robot-head"></div>
+                    <div class="robot-body" id="robotText">🐍</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="workbench">
+            <div class="panel">
+              <div class="panel-inner">
+                <h3 class="section-title">Редактор кода</h3>
+                <div class="editor-wrap">
+                  <div class="editor-head">
+                    <div class="dots">
+                      <span class="dot"></span>
+                      <span class="dot"></span>
+                      <span class="dot"></span>
+                    </div>
+                    <span>main.py</span>
+                  </div>
+                  <textarea id="codeEditor" spellcheck="false"></textarea>
+                </div>
+
+                <div class="editor-actions">
+                  <button class="btn" id="runBtn">▶ Запустить</button>
+                  <button class="btn secondary" id="hintBtn">💡 Подсказка</button>
+                  <button class="btn secondary" id="fillBtn">🧩 Пример</button>
+                  <button class="btn secondary" id="solveBtn">✅ Выполнить задание</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-inner">
+                <h3 class="section-title">Консоль и результат</h3>
+                <div class="console" id="console">Напиши код и нажми «Запустить».</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <div class="panel">
+            <div class="panel-inner progress-card">
+              <h3 class="section-title">Прогресс курса</h3>
+              <div class="bar">
+                <div class="bar-fill" id="progressFill"></div>
+              </div>
+
+              <div class="stats">
+                <div class="stat">
+                  <b id="completedCount">0</b>
+                  <span>уровней пройдено</span>
+                </div>
+                <div class="stat">
+                  <b id="unitCount">0</b>
+                  <span>юнитов открыто</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-inner unit-nav">
+              <div class="unit-line">
+                <div>
+                  <h3 id="unitTitle">Юнит</h3>
+                  <p id="unitSubtitle">20 уроков</p>
+                </div>
+                <div class="stat-strip">
+                  <button class="btn secondary" id="prevUnitBtn">←</button>
+                  <button class="btn secondary" id="nextUnitBtn">→</button>
+                </div>
+              </div>
+
+              <select class="select" id="unitSelect"></select>
+              <button class="btn secondary" id="currentLevelBtn">К текущему уровню</button>
+
+              <div class="path" id="levelPath"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-inner">
+              <h3 class="section-title">Мини-урок</h3>
+              <div class="lesson" id="lessonText"></div>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </section>
+
+    <section class="view" id="shopView">
+      <div class="panel">
+        <div class="panel-inner">
+          <h2 style="margin:0 0 8px;font-size:32px;letter-spacing:-0.04em;">Магазин звёзд</h2>
+          <p style="margin:0 0 18px;color:var(--muted);line-height:1.5;">
+            Теперь звёзды — это валюта. Их дают за уровни: 3⭐ с первой попытки, 2⭐ если были ошибки, 1⭐ если пришлось долго думать.
+          </p>
+          <div class="grid" id="shopGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="statsView">
+      <div class="stats-layout">
+        <div class="panel">
+          <div class="panel-inner">
+            <h2 style="margin:0 0 8px;font-size:30px;letter-spacing:-0.04em;">Твой профиль</h2>
+            <p style="margin:0;color:var(--muted);">Всё хранится локально в браузере.</p>
+
+            <div class="stats" style="margin-top:18px;">
+              <div class="stat">
+                <span>Пройдено</span>
+                <div class="big-number" id="statsCompleted">0</div>
+              </div>
+              <div class="stat">
+                <span>Всего уровней</span>
+                <div class="big-number" id="statsTotal">1200</div>
+              </div>
+              <div class="stat">
+                <span>Звёзды</span>
+                <div class="big-number" id="statsStars">0</div>
+              </div>
+              <div class="stat">
+                <span>Серия</span>
+                <div class="big-number" id="statsStreak">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-inner">
+            <h2 style="margin:0 0 14px;font-size:30px;letter-spacing:-0.04em;">Достижения</h2>
+            <div class="grid" style="grid-template-columns:1fr;" id="achievementsGrid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <div class="modal-content">
+        <h2 id="modalTitle">Готово!</h2>
+        <p id="modalText"></p>
+        <div class="reward-line" id="rewardLine"></div>
+        <div class="modal-actions">
+          <button class="btn" id="nextBtn">Следующий уровень</button>
+          <button class="btn secondary" id="closeModalBtn">Остаться тут</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "kodograd2077_duolingo_v3";
+    const TOTAL_LEVELS = 1200;
+    const UNIT_SIZE = 20;
+    const TOTAL_UNITS = Math.ceil(TOTAL_LEVELS / UNIT_SIZE);
+
+    const WORDS = [
+      "дрон", "робот", "портал", "сервер", "турель", "сканер", "модуль", "двигатель",
+      "сенсор", "кабель", "ядро", "лифт", "завод", "склад", "станция", "панель",
+      "карта", "сигнал", "ключ", "город", "энергия", "район", "бот", "свет"
+    ];
+
+    const RU_TEXTS = [
+      "Привет, Кодоград!",
+      "Система запущена",
+      "Робот готов",
+      "Дрон найден",
+      "Дверь открыта",
+      "Ремонт завершён",
+      "Энергия восстановлена",
+      "Код принят",
+      "Склад активирован",
+      "Миссия выполнена"
+    ];
+
+    const ACTIONS = [
+      "open_door", "collect", "charge", "scan", "repair", "start_system", "send_signal", "move_robot"
+    ];
+
+    const CURRICULUM = [
+      { key: "print", title: "Вывод текста", emoji: "📢", intro: "Команды вывода помогают увидеть результат программы." },
+      { key: "vars", title: "Переменные", emoji: "📦", intro: "Переменные хранят числа, строки и состояния." },
+      { key: "math", title: "Числа и математика", emoji: "🧮", intro: "Python умеет считать: складывать, умножать и делить." },
+      { key: "strings", title: "Строки", emoji: "💬", intro: "Строки — это текстовые данные в кавычках." },
+      { key: "if", title: "Условия", emoji: "🚪", intro: "Условия позволяют программе принимать решения." },
+      { key: "loops", title: "Циклы", emoji: "🔁", intro: "Циклы повторяют действия много раз." },
+      { key: "lists", title: "Списки", emoji: "📋", intro: "Списки хранят несколько значений в одном месте." },
+      { key: "functions", title: "Функции", emoji: "🛠️", intro: "Функции помогают переиспользовать код." },
+      { key: "dicts", title: "Словари", emoji: "🗂️", intro: "Словари хранят данные в формате ключ → значение." },
+      { key: "mixed", title: "Комбо-задания", emoji: "⚡", intro: "Теперь темы смешиваются, как в настоящих программах." },
+      { key: "advanced", title: "Продвинутые основы", emoji: "🧠", intro: "Чуть сложнее: return, параметры, проверки, вложенность." },
+      { key: "projects", title: "Мини-проекты", emoji: "🚀", intro: "Маленькие программы из нескольких идей сразу." }
+    ];
+
+    const SHOP_ITEMS = [
+      {
+        id: "hint_pack",
+        type: "consumable",
+        title: "Пак подсказок",
+        icon: "💡",
+        cost: 10,
+        description: "+5 бесплатных подсказок. Полезно на сложных уровнях.",
+        buy() {
+          state.hintTokens += 5;
+        }
+      },
+      {
+        id: "streak_freeze",
+        type: "consumable",
+        title: "Заморозка серии",
+        icon: "🧊",
+        cost: 25,
+        description: "Один раз спасает серию, если день пропущен.",
+        buy() {
+          state.streakFreezes += 1;
+        }
+      },
+      {
+        id: "perfect_boost",
+        type: "consumable",
+        title: "Буст идеала",
+        icon: "✨",
+        cost: 18,
+        description: "Следующий пройденный уровень даст +1⭐ сверху.",
+        buy() {
+          state.perfectBoosts += 1;
+        }
+      },
+      {
+        id: "theme_emerald",
+        type: "theme",
+        title: "Тема Emerald",
+        icon: "🟢",
+        cost: 60,
+        description: "Зелёный кибер-город.",
+        value: "emerald"
+      },
+      {
+        id: "theme_sunset",
+        type: "theme",
+        title: "Тема Sunset",
+        icon: "🌇",
+        cost: 80,
+        description: "Тёплый закатный стиль.",
+        value: "sunset"
+      },
+      {
+        id: "theme_ice",
+        type: "theme",
+        title: "Тема Ice",
+        icon: "🧊",
+        cost: 90,
+        description: "Холодный синий интерфейс.",
+        value: "ice"
+      },
+      {
+        id: "theme_mono",
+        type: "theme",
+        title: "Тема Mono",
+        icon: "⚫",
+        cost: 120,
+        description: "Минималистичный чёрно-белый стиль.",
+        value: "mono"
+      },
+      {
+        id: "bot_snake",
+        type: "bot",
+        title: "Скин Python",
+        icon: "🐍",
+        cost: 35,
+        description: "Робот с символом Python.",
+        value: "🐍"
+      },
+      {
+        id: "bot_drone",
+        type: "bot",
+        title: "Скин Дрон",
+        icon: "🛸",
+        cost: 55,
+        description: "Летающий помощник для миссий.",
+        value: "🛸"
+      },
+      {
+        id: "bot_car",
+        type: "bot",
+        title: "Скин Спорткар",
+        icon: "🏎️",
+        cost: 75,
+        description: "Когда код должен ехать быстро.",
+        value: "🏎️"
+      },
+      {
+        id: "bot_cat",
+        type: "bot",
+        title: "Скин Котобот",
+        icon: "🐱",
+        cost: 95,
+        description: "Милый, но строгий проверяльщик кода.",
+        value: "🐱"
+      },
+      {
+        id: "bot_fire",
+        type: "bot",
+        title: "Скин Огонь",
+        icon: "🔥",
+        cost: 140,
+        description: "Для тех, кто держит серию.",
+        value: "🔥"
+      }
+    ];
+
+    const ACHIEVEMENTS = [
+      { id: "first", title: "Первый запуск", icon: "▶️", description: "Пройти 1 уровень.", check: s => completedCount() >= 1 },
+      { id: "ten", title: "Уже втянулся", icon: "🔟", description: "Пройти 10 уровней.", check: s => completedCount() >= 10 },
+      { id: "hundred", title: "Python-марафонец", icon: "💯", description: "Пройти 100 уровней.", check: s => completedCount() >= 100 },
+      { id: "unit", title: "Первый юнит", icon: "🏙️", description: "Закончить 20 уровней.", check: s => completedCount() >= 20 },
+      { id: "rich", title: "Звёздный капитал", icon: "⭐", description: "Накопить 100 звёзд за всё время.", check: s => s.lifetimeStars >= 100 },
+      { id: "streak3", title: "Серия 3 дня", icon: "🔥", description: "Держать серию 3 дня.", check: s => s.streak >= 3 },
+      { id: "shopper", title: "Первая покупка", icon: "🛒", description: "Купить что-то в магазине.", check: s => s.purchasesCount >= 1 },
+      { id: "perfect10", title: "Без ошибок", icon: "✨", description: "Пройти 10 уровней с первой попытки.", check: s => s.perfectLevels >= 10 }
+    ];
+
+    const state = loadState();
+    let currentLevelIndex = Math.min(state.currentLevelIndex, TOTAL_LEVELS - 1);
+    let visibleUnit = Math.floor(currentLevelIndex / UNIT_SIZE);
+    let currentLevel = createLevel(currentLevelIndex);
+    let hintIndex = 0;
+    let attemptsThisLevel = 0;
+    let deferredInstallPrompt = null;
+    let modalPrimaryAction = () => nextLevel();
+
+    const els = {
+      levelNumber: document.getElementById("levelNumber"),
+      missionTitle: document.getElementById("missionTitle"),
+      missionTopic: document.getElementById("missionTopic"),
+      missionStory: document.getElementById("missionStory"),
+      missionGoal: document.getElementById("missionGoal"),
+      lessonText: document.getElementById("lessonText"),
+      codeEditor: document.getElementById("codeEditor"),
+      console: document.getElementById("console"),
+      progressFill: document.getElementById("progressFill"),
+      completedCount: document.getElementById("completedCount"),
+      unitCount: document.getElementById("unitCount"),
+      levelPath: document.getElementById("levelPath"),
+      unitTitle: document.getElementById("unitTitle"),
+      unitSubtitle: document.getElementById("unitSubtitle"),
+      unitSelect: document.getElementById("unitSelect"),
+      robot: document.getElementById("robot"),
+      robotText: document.getElementById("robotText"),
+      scene: document.getElementById("scene"),
+      chips: document.getElementById("chips"),
+      topStars: document.getElementById("topStars"),
+      topStreak: document.getElementById("topStreak"),
+      topXp: document.getElementById("topXp"),
+      shopGrid: document.getElementById("shopGrid"),
+      achievementsGrid: document.getElementById("achievementsGrid"),
+      statsCompleted: document.getElementById("statsCompleted"),
+      statsTotal: document.getElementById("statsTotal"),
+      statsStars: document.getElementById("statsStars"),
+      statsStreak: document.getElementById("statsStreak"),
+      modal: document.getElementById("modal"),
+      modalTitle: document.getElementById("modalTitle"),
+      modalText: document.getElementById("modalText"),
+      rewardLine: document.getElementById("rewardLine"),
+      toast: document.getElementById("toast")
+    };
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => switchView(tab.dataset.view));
+    });
+
+    document.getElementById("runBtn").addEventListener("click", runCode);
+    document.getElementById("hintBtn").addEventListener("click", showHint);
+    document.getElementById("fillBtn").addEventListener("click", showCodeExample);
+    document.getElementById("solveBtn").addEventListener("click", solveTask);
+    document.getElementById("installBtn").addEventListener("click", installApp);
+    document.getElementById("resetBtn").addEventListener("click", resetGame);
+    document.getElementById("aboutBtn").addEventListener("click", showAbout);
+    document.getElementById("nextBtn").addEventListener("click", handleModalPrimary);
+    document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+    document.getElementById("prevUnitBtn").addEventListener("click", () => setVisibleUnit(Math.max(0, visibleUnit - 1)));
+    document.getElementById("nextUnitBtn").addEventListener("click", () => setVisibleUnit(Math.min(TOTAL_UNITS - 1, visibleUnit + 1)));
+    document.getElementById("currentLevelBtn").addEventListener("click", () => {
+      visibleUnit = Math.floor(currentLevelIndex / UNIT_SIZE);
+      renderPath();
+      scrollToCurrentIfPossible();
+    });
+
+    els.unitSelect.addEventListener("change", () => {
+      setVisibleUnit(Number(els.unitSelect.value));
+    });
+
+    window.addEventListener("beforeinstallprompt", event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      showToast("📲 Кодоград можно установить как приложение.");
+    });
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      showToast("✅ Кодоград установлен как приложение.");
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {
+          console.warn("Service worker не зарегистрировался.");
+        });
+      });
+    }
+
+
+    els.codeEditor.addEventListener("keydown", event => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        const start = els.codeEditor.selectionStart;
+        const end = els.codeEditor.selectionEnd;
+        els.codeEditor.value = els.codeEditor.value.slice(0, start) + "    " + els.codeEditor.value.slice(end);
+        els.codeEditor.selectionStart = els.codeEditor.selectionEnd = start + 4;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        runCode();
+      }
+    });
+
+    els.codeEditor.addEventListener("input", () => {
+      state.drafts[currentLevelIndex] = els.codeEditor.value;
+      saveState();
+    });
+
+    checkStreak();
+    initUnitSelect();
+    applyTheme();
+    renderAll();
+
+    function defaultState() {
+      return {
+        currentLevelIndex: 0,
+        completed: {},
+        drafts: {},
+        solutionsUsed: {},
+        stars: 0,
+        lifetimeStars: 0,
+        xp: 0,
+        streak: 0,
+        lastPlayDate: "",
+        hintTokens: 3,
+        streakFreezes: 0,
+        perfectBoosts: 0,
+        ownedThemes: ["default"],
+        equippedTheme: "default",
+        ownedBots: ["🐍"],
+        equippedBot: "🐍",
+        purchasesCount: 0,
+        perfectLevels: 0,
+        achievementsClaimed: {}
+      };
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return Object.assign(defaultState(), saved || {});
+      } catch {
+        return defaultState();
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderTopStats();
+    }
+
+    function todayKey() {
+      const date = new Date();
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function dayDiff(a, b) {
+      const da = new Date(a + "T00:00:00");
+      const db = new Date(b + "T00:00:00");
+      return Math.round((db - da) / 86400000);
+    }
+
+    function checkStreak() {
+      const today = todayKey();
+
+      if (!state.lastPlayDate) {
+        return;
+      }
+
+      const diff = dayDiff(state.lastPlayDate, today);
+
+      if (diff > 1) {
+        if (state.streakFreezes > 0) {
+          state.streakFreezes -= 1;
+          state.lastPlayDate = today;
+          showToast("🧊 Заморозка серии спасла твой streak.");
+        } else {
+          state.streak = 0;
+        }
+        saveState();
+      }
+    }
+
+    function markPlayedToday() {
+      const today = todayKey();
+
+      if (!state.lastPlayDate) {
+        state.streak = 1;
+      } else {
+        const diff = dayDiff(state.lastPlayDate, today);
+        if (diff === 1) state.streak += 1;
+        else if (diff > 1) state.streak = 1;
+      }
+
+      state.lastPlayDate = today;
+    }
+
+    function completedCount() {
+      return Object.keys(state.completed).length;
+    }
+
+    function completedStars(index) {
+      return state.completed[index]?.stars || 0;
+    }
+
+    function maxUnlockedIndex() {
+      const done = completedCount();
+
+      if (done >= TOTAL_LEVELS) {
+        return TOTAL_LEVELS - 1;
+      }
+
+      let i = 0;
+      while (i < TOTAL_LEVELS && state.completed[i]) i++;
+      return i;
+    }
+
+    function isUnlocked(index) {
+      return index <= maxUnlockedIndex();
+    }
+
+    function initUnitSelect() {
+      els.unitSelect.innerHTML = "";
+
+      for (let i = 0; i < TOTAL_UNITS; i++) {
+        const option = document.createElement("option");
+        const topic = unitTopic(i);
+        option.value = i;
+        option.textContent = `Юнит ${i + 1}: ${topic.title}`;
+        els.unitSelect.appendChild(option);
+      }
+    }
+
+    function renderAll() {
+      currentLevel = createLevel(currentLevelIndex);
+      renderLevel();
+      renderPath();
+      renderTopStats();
+      renderProgress();
+      renderShop();
+      renderStats();
+      renderAchievements();
+      updateSolveButton();
+    }
+
+    function renderLevel() {
+      const level = currentLevel;
+      attemptsThisLevel = 0;
+      hintIndex = 0;
+
+      els.levelNumber.textContent = level.globalNumber;
+      els.missionTitle.textContent = level.title;
+      els.missionTopic.textContent = `Юнит ${level.unit + 1} · ${level.topicTitle}`;
+      els.missionStory.textContent = level.story;
+      els.missionGoal.textContent = " " + level.goal;
+      els.lessonText.innerHTML = level.lesson;
+      els.robotText.textContent = state.equippedBot || level.emoji;
+
+      els.chips.innerHTML = "";
+      level.chips.forEach(text => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = text;
+        els.chips.appendChild(chip);
+      });
+
+      const draft = state.drafts[currentLevelIndex];
+      els.codeEditor.value = typeof draft === "string" ? draft : level.starter;
+
+      els.console.className = "console";
+      els.console.textContent = "Напиши код и нажми «Запустить». Можно Ctrl/⌘ + Enter.";
+      els.robot.classList.remove("success-glow");
+      updateSolveButton();
+    }
+
+    function renderTopStats() {
+      els.topStars.textContent = state.stars;
+      els.topStreak.textContent = state.streak;
+      els.topXp.textContent = state.xp;
+    }
+
+    function renderProgress() {
+      const count = completedCount();
+      const percent = Math.round((count / TOTAL_LEVELS) * 10000) / 100;
+      els.progressFill.style.width = `${percent}%`;
+      els.completedCount.textContent = count;
+      els.unitCount.textContent = Math.min(TOTAL_UNITS, Math.floor(count / UNIT_SIZE) + 1);
+    }
+
+    function renderPath() {
+      const topic = unitTopic(visibleUnit);
+      const first = visibleUnit * UNIT_SIZE;
+      const last = Math.min(TOTAL_LEVELS - 1, first + UNIT_SIZE - 1);
+      els.unitTitle.textContent = `Юнит ${visibleUnit + 1}: ${topic.title}`;
+      els.unitSubtitle.textContent = `${topic.intro} · уровни ${first + 1}–${last + 1}`;
+      els.unitSelect.value = String(visibleUnit);
+
+      els.levelPath.innerHTML = "";
+
+      for (let i = first; i <= last; i++) {
+        const level = createLevel(i);
+        const done = Boolean(state.completed[i]);
+        const unlocked = isUnlocked(i);
+
+        const item = document.createElement("button");
+        item.className = "path-item";
+        if (i === currentLevelIndex) item.classList.add("active");
+        if (!unlocked) item.classList.add("locked");
+
+        item.innerHTML = `
+          <div class="path-item-icon">${done ? "✅" : unlocked ? level.emoji : "🔒"}</div>
+          <div>
+            <div class="path-item-title">${level.globalNumber}. ${level.shortTitle}</div>
+            <div class="path-item-subtitle">${level.topicTitle}</div>
+          </div>
+          <div class="stars-small">${done ? "⭐".repeat(completedStars(i)) : unlocked ? "▶" : ""}</div>
+        `;
+
+        item.addEventListener("click", () => {
+          if (!unlocked) {
+            showToast("Сначала пройди предыдущие уровни.");
+            return;
+          }
+
+          currentLevelIndex = i;
+          state.currentLevelIndex = i;
+          saveState();
+          renderAll();
+        });
+
+        els.levelPath.appendChild(item);
+      }
+    }
+
+    function renderShop() {
+      els.shopGrid.innerHTML = "";
+
+      SHOP_ITEMS.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "shop-card";
+
+        const owned = isOwned(item);
+        const equipped = isEquipped(item);
+        const canBuy = state.stars >= item.cost;
+
+        let buttonText = "Купить";
+        if (item.type === "theme" || item.type === "bot") {
+          if (equipped) buttonText = "Выбрано";
+          else if (owned) buttonText = "Выбрать";
+        }
+
+        card.innerHTML = `
+          <div>
+            <div class="shop-icon">${item.icon}</div>
+            <h3>${item.title}</h3>
+            <p>${item.description}</p>
+          </div>
+          <div class="shop-bottom">
+            <div>
+              <div class="cost">${owned && item.type !== "consumable" ? "Куплено" : item.cost + " ⭐"}</div>
+              <div class="mini">${item.type === "consumable" ? "расходник" : item.type === "theme" ? "тема" : "скин"}</div>
+            </div>
+            <button class="btn secondary">${buttonText}</button>
+          </div>
+        `;
+
+        const button = card.querySelector("button");
+        button.disabled = equipped || (!owned && !canBuy && item.type !== "consumable");
+        button.addEventListener("click", () => buyOrEquip(item));
+
+        els.shopGrid.appendChild(card);
+      });
+    }
+
+    function renderStats() {
+      els.statsCompleted.textContent = completedCount();
+      els.statsTotal.textContent = TOTAL_LEVELS;
+      els.statsStars.textContent = state.stars;
+      els.statsStreak.textContent = state.streak;
+    }
+
+    function renderAchievements() {
+      els.achievementsGrid.innerHTML = "";
+
+      ACHIEVEMENTS.forEach(achievement => {
+        const unlocked = achievement.check(state);
+        const claimed = Boolean(state.achievementsClaimed[achievement.id]);
+
+        const card = document.createElement("div");
+        card.className = "achievement-card";
+        card.innerHTML = `
+          <div>
+            <div class="shop-icon">${unlocked ? achievement.icon : "🔒"}</div>
+            <h3>${achievement.title}</h3>
+            <p>${achievement.description}</p>
+          </div>
+          <div class="shop-bottom">
+            <div class="cost">${claimed ? "Получено" : unlocked ? "+15 ⭐" : "Закрыто"}</div>
+            <button class="btn secondary">${claimed ? "Готово" : unlocked ? "Забрать" : "Пока нет"}</button>
+          </div>
+        `;
+
+        const button = card.querySelector("button");
+        button.disabled = claimed || !unlocked;
+        button.addEventListener("click", () => claimAchievement(achievement));
+
+        els.achievementsGrid.appendChild(card);
+      });
+    }
+
+    function claimAchievement(achievement) {
+      if (state.achievementsClaimed[achievement.id] || !achievement.check(state)) return;
+
+      state.achievementsClaimed[achievement.id] = true;
+      state.stars += 15;
+      state.lifetimeStars += 15;
+      saveState();
+      renderAll();
+      showToast(`🏆 Достижение: ${achievement.title}. +15⭐`);
+    }
+
+    function isOwned(item) {
+      if (item.type === "consumable") return false;
+      if (item.type === "theme") return state.ownedThemes.includes(item.value);
+      if (item.type === "bot") return state.ownedBots.includes(item.value);
+      return false;
+    }
+
+    function isEquipped(item) {
+      if (item.type === "theme") return state.equippedTheme === item.value;
+      if (item.type === "bot") return state.equippedBot === item.value;
+      return false;
+    }
+
+    function buyOrEquip(item) {
+      if (item.type === "theme") {
+        if (state.ownedThemes.includes(item.value)) {
+          state.equippedTheme = item.value;
+          applyTheme();
+          saveState();
+          renderAll();
+          showToast(`Тема выбрана: ${item.title}`);
+          return;
+        }
+      }
+
+      if (item.type === "bot") {
+        if (state.ownedBots.includes(item.value)) {
+          state.equippedBot = item.value;
+          saveState();
+          renderAll();
+          showToast(`Скин выбран: ${item.title}`);
+          return;
+        }
+      }
+
+      if (state.stars < item.cost) {
+        showToast("Не хватает звёзд.");
+        return;
+      }
+
+      state.stars -= item.cost;
+      state.purchasesCount += 1;
+
+      if (item.type === "theme") {
+        state.ownedThemes.push(item.value);
+        state.equippedTheme = item.value;
+        applyTheme();
+      } else if (item.type === "bot") {
+        state.ownedBots.push(item.value);
+        state.equippedBot = item.value;
+      } else {
+        item.buy();
+      }
+
+      saveState();
+      renderAll();
+      showToast(`Куплено: ${item.title}`);
+    }
+
+    function applyTheme() {
+      const theme = state.equippedTheme === "default" ? "" : state.equippedTheme;
+      document.body.dataset.theme = theme;
+    }
+
+    function switchView(view) {
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.view === view);
+      });
+
+      document.querySelectorAll(".view").forEach(section => {
+        section.classList.toggle("active", section.id === `${view}View`);
+      });
+
+      if (view === "shop") renderShop();
+      if (view === "stats") {
+        renderStats();
+        renderAchievements();
+      }
+    }
+
+    function setVisibleUnit(unit) {
+      visibleUnit = Math.max(0, Math.min(TOTAL_UNITS - 1, unit));
+      renderPath();
+    }
+
+    function scrollToCurrentIfPossible() {
+      const active = els.levelPath.querySelector(".path-item.active");
+      if (active) active.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function runCode() {
+      const code = els.codeEditor.value;
+      const level = currentLevel;
+      attemptsThisLevel += 1;
+
+      const result = level.validate(code);
+      const output = buildOutput(code, level);
+
+      if (result.ok) {
+        const firstTime = !state.completed[currentLevelIndex];
+        const usedSolution = Boolean(state.solutionsUsed[currentLevelIndex]);
+        const baseStars = usedSolution ? 1 : attemptsThisLevel <= 1 ? 3 : attemptsThisLevel <= 3 ? 2 : 1;
+        let earnedStars = firstTime ? baseStars : 0;
+        let earnedXp = firstTime ? 10 + Math.min(10, Math.floor(currentLevelIndex / 50)) : 2;
+
+        if (firstTime && state.perfectBoosts > 0) {
+          state.perfectBoosts -= 1;
+          earnedStars += 1;
+        }
+
+        els.console.className = "console good";
+        els.console.textContent = output + "\n\n✅ Уровень пройден!\n" + level.success;
+        els.robot.classList.add("success-glow");
+
+        if (firstTime) {
+          state.completed[currentLevelIndex] = {
+            stars: earnedStars,
+            attempts: attemptsThisLevel,
+            date: todayKey(),
+            kind: level.kind
+          };
+
+          state.stars += earnedStars;
+          state.lifetimeStars += earnedStars;
+          state.xp += earnedXp;
+          if (attemptsThisLevel === 1 && !usedSolution) state.perfectLevels += 1;
+          markPlayedToday();
+        }
+
+        state.currentLevelIndex = Math.max(state.currentLevelIndex, currentLevelIndex);
+        saveState();
+        renderTopStats();
+        renderProgress();
+        renderPath();
+
+        setTimeout(() => {
+          showSuccessModal({
+            text: result.message || level.success,
+            stars: earnedStars,
+            xp: earnedXp,
+            repeated: !firstTime,
+            firstTry: attemptsThisLevel === 1 && !usedSolution
+          });
+        }, 450);
+      } else {
+        els.console.className = "console bad";
+        els.console.textContent =
+          output +
+          "\n\n❌ Пока не засчитано.\n" +
+          (result.message || "Проверь задание, отступы, кавычки и названия переменных.");
+        shake(els.scene);
+      }
+    }
+
+    function showSuccessModal(reward) {
+      const isLast = currentLevelIndex === TOTAL_LEVELS - 1;
+      els.modalTitle.textContent = isLast ? "Весь курс завершён!" : reward.repeated ? "Повторение пройдено!" : "Уровень пройден!";
+      els.modalText.textContent = reward.text;
+
+      els.rewardLine.innerHTML = "";
+      const rewards = reward.repeated
+        ? [`+${reward.xp} XP за повторение`]
+        : [`+${reward.stars} ⭐`, `+${reward.xp} XP`, reward.firstTry ? "Идеально с первой попытки ✨" : "Есть прогресс 💪"];
+
+      rewards.forEach(text => {
+        const badge = document.createElement("div");
+        badge.className = text.includes("⭐") ? "reward coin" : "reward";
+        badge.textContent = text;
+        els.rewardLine.appendChild(badge);
+      });
+
+      setModalPrimary(isLast ? "К первому уровню" : "Следующий уровень", nextLevel);
+      els.modal.classList.add("show");
+    }
+
+    function nextLevel() {
+      if (currentLevelIndex >= TOTAL_LEVELS - 1) {
+        currentLevelIndex = 0;
+      } else {
+        currentLevelIndex += 1;
+      }
+
+      if (!isUnlocked(currentLevelIndex)) {
+        currentLevelIndex = maxUnlockedIndex();
+      }
+
+      state.currentLevelIndex = currentLevelIndex;
+      visibleUnit = Math.floor(currentLevelIndex / UNIT_SIZE);
+      saveState();
+      closeModal();
+      renderAll();
+    }
+
+    function closeModal() {
+      els.modal.classList.remove("show");
+    }
+
+    function showHint() {
+      const level = currentLevel;
+      const freeHintUsedKey = `hint_${currentLevelIndex}`;
+      const isFreeAvailable = !state[freeHintUsedKey];
+
+      if (!isFreeAvailable && state.hintTokens <= 0 && state.stars <= 0) {
+        showToast("Подсказки закончились. Купи пак в магазине или заработай звёзды.");
+        return;
+      }
+
+      if (isFreeAvailable) {
+        state[freeHintUsedKey] = true;
+      } else if (state.hintTokens > 0) {
+        state.hintTokens -= 1;
+      } else {
+        state.stars -= 1;
+      }
+
+      const hint = level.hints[Math.min(hintIndex, level.hints.length - 1)];
+      hintIndex += 1;
+      saveState();
+      showToast(`💡 ${hint}`);
+    }
+
+    function showCodeExample() {
+      const level = currentLevel;
+      const example = exampleForLevel(level);
+      els.codeEditor.value = example;
+      state.drafts[currentLevelIndex] = els.codeEditor.value;
+      saveState();
+      showToast("🧩 Это пример синтаксиса, не готовое решение уровня.");
+    }
+
+    function exampleForLevel(level) {
+      const examples = {
+        print: 'print("Пример текста")',
+        vars: 'example_value = 10\nprint(example_value)',
+        math: 'example_result = 2 + 2\nprint(example_result)',
+        strings: 'message = "пример"\nprint(message)',
+        if: 'is_ready = True\n\nif is_ready:\n    start_system()',
+        loops: 'for i in range(3):\n    collect()',
+        lists: 'items = ["пример", "код", "урок"]\nprint(items)',
+        functions: 'def say_hello():\n    print("Пример")\n\nsay_hello()',
+        dicts: 'robot = {"name": "demo", "energy": 10}\nprint(robot)',
+        mixed: 'power = 2\n\nif power > 0:\n    for i in range(power):\n        start_system()',
+        advanced: 'def add_one(x):\n    return x + 1\n\nprint(add_one(5))',
+        projects: 'tasks = ["demo", "test"]\n\nfor task in tasks:\n    print(task)'
+      };
+
+      return "# Это НЕ готовый ответ, а похожий пример\n" + (examples[level.kind] || examples.print);
+    }
+
+    function solveCost(index = currentLevelIndex) {
+      return Math.min(80, 20 + Math.floor(index / 100) * 5);
+    }
+
+    function updateSolveButton() {
+      const btn = document.getElementById("solveBtn");
+      if (!btn) return;
+
+      if (state.completed[currentLevelIndex]) {
+        btn.textContent = "✅ Показать решение";
+        btn.title = "Уровень уже пройден — решение можно посмотреть бесплатно";
+      } else {
+        const cost = solveCost(currentLevelIndex);
+        btn.textContent = `✅ Выполнить задание ${cost}⭐`;
+        btn.title = `Вставить правильный код за ${cost} звёзд. После этого за уровень дадут максимум 1⭐.`;
+      }
+    }
+
+    function solveTask() {
+      const level = currentLevel;
+      const alreadyCompleted = Boolean(state.completed[currentLevelIndex]);
+      const cost = alreadyCompleted ? 0 : solveCost(currentLevelIndex);
+
+      if (cost > 0 && state.stars < cost) {
+        showToast(`Не хватает звёзд. Нужно ${cost}⭐, у тебя ${state.stars}⭐.`);
+        return;
+      }
+
+      if (cost > 0) {
+        state.stars -= cost;
+        state.solutionsUsed[currentLevelIndex] = true;
+        attemptsThisLevel = Math.max(attemptsThisLevel, 4);
+      }
+
+      els.codeEditor.value = level.sample;
+      state.drafts[currentLevelIndex] = els.codeEditor.value;
+      saveState();
+      renderTopStats();
+      renderShop();
+      updateSolveButton();
+
+      showToast(cost > 0 ? `✅ Готовый код вставлен за ${cost}⭐. За уровень будет максимум 1⭐.` : "✅ Решение вставлено.");
+    }
+
+    function handleModalPrimary() {
+      if (typeof modalPrimaryAction === "function") {
+        modalPrimaryAction();
+      }
+    }
+
+    function setModalPrimary(text, action) {
+      const nextBtn = document.getElementById("nextBtn");
+      nextBtn.textContent = text;
+      modalPrimaryAction = action;
+    }
+
+    async function installApp() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+
+        if (choice.outcome === "accepted") {
+          showToast("✅ Установка запущена.");
+        } else {
+          showToast("Установку отменили.");
+        }
+
+        return;
+      }
+
+      showInstallHelp();
+    }
+
+    function showInstallHelp() {
+      els.modalTitle.textContent = "Установка как приложение";
+      els.modalText.innerHTML =
+        "На iPad/iPhone: открой сайт в Safari → нажми кнопку «Поделиться» → «На экран Домой».<br><br>" +
+        "На Android/Chrome: меню браузера → «Установить приложение».<br><br>" +
+        "После установки Кодоград будет открываться как отдельное приложение и сможет работать офлайн.";
+      els.rewardLine.innerHTML = "";
+      setModalPrimary("Понятно", closeModal);
+      els.modal.classList.add("show");
+    }
+
+    function showAbout() {
+      els.modalTitle.textContent = "О версии";
+      els.modalText.textContent =
+        "Это расширенная версия Кодограда: 1200 уровней, 60 юнитов, магазин звёзд, скины, темы, подсказки, серия дней и достижения. Всё работает в одном HTML-файле без бэкенда. Код Python не выполняется реально — игра проверяет учебные конструкции и имитирует результат.";
+      els.rewardLine.innerHTML = "";
+      setModalPrimary("Понятно", closeModal);
+      els.modal.classList.add("show");
+    }
+
+    function resetGame() {
+      const ok = confirm("Сбросить весь прогресс, звёзды, магазин и серию?");
+      if (!ok) return;
+
+      localStorage.removeItem(STORAGE_KEY);
+      Object.assign(state, defaultState());
+      currentLevelIndex = 0;
+      visibleUnit = 0;
+      applyTheme();
+      saveState();
+      renderAll();
+      showToast("Прогресс сброшен.");
+    }
+
+    function createLevel(index) {
+      const unit = Math.floor(index / UNIT_SIZE);
+      const pos = index % UNIT_SIZE;
+      const topic = levelTopic(index);
+      const seed = index + 1337;
+      const rng = mulberry32(seed);
+      const word = pick(WORDS, rng);
+      const word2 = pick(WORDS, rng);
+      const text = pick(RU_TEXTS, rng);
+      const action = pick(ACTIONS, rng);
+      const a = 2 + Math.floor(rng() * 18);
+      const b = 2 + Math.floor(rng() * 12);
+      const n = 2 + Math.floor(rng() * 8);
+      const varName = pick(["energy", "speed", "score", "level", "power", "coins", "bots", "doors"], rng);
+      const strVar = pick(["name", "status", "message", "city", "robot"], rng);
+      const listName = pick(["parts", "items", "robots", "signals", "codes"], rng);
+      const funcName = pick(["repair", "start", "scan", "charge", "build", "boost"], rng);
+
+      const common = {
+        index,
+        globalNumber: index + 1,
+        unit,
+        unitLevel: pos + 1,
+        topicKey: topic.key,
+        topicTitle: topic.title,
+        emoji: topic.emoji
+      };
+
+      const make = {
+        print: () => ({
+          ...common,
+          kind: "print",
+          title: "Голосовой модуль",
+          shortTitle: "print()",
+          story: `В районе «${unitName(unit)}» нужно вернуть роботу голос. Он должен вывести точную фразу.`,
+          goal: `Выведи текст: ${text}`,
+          lesson: `Функция <code>print()</code> выводит текст в консоль. Текст пиши в кавычках: <code>print("текст")</code>.`,
+          starter: "# Выведи нужный текст\n",
+          sample: `print("${text}")`,
+          chips: ["print()", "строки", "кавычки"],
+          hints: ["Начни с print().", "Текст должен быть в кавычках.", `Ответ похож на: print("${text}")`],
+          success: "Робот снова говорит.",
+          validate: code => hasPrintText(code, text)
+        }),
+
+        vars: () => ({
+          ...common,
+          kind: "vars",
+          title: "Энергоблок",
+          shortTitle: "переменная",
+          story: `Станции нужен параметр ${varName}. Без переменной система не понимает, сколько ресурсов осталось.`,
+          goal: `Создай переменную ${varName} со значением ${a}.`,
+          lesson: `Переменная хранит значение. Пример: <code>${varName} = ${a}</code>. В Python не нужен <code>var</code> или <code>let</code>.`,
+          starter: `# Создай переменную ${varName}\n`,
+          sample: `${varName} = ${a}\nprint(${varName})`,
+          chips: ["переменные", "числа", "="],
+          hints: [`Имя переменной: ${varName}.`, `Значение: ${a}.`, `Нужно написать: ${varName} = ${a}`],
+          success: "Энергоблок получил значение.",
+          validate: code => hasAssignmentValue(code, varName, a)
+        }),
+
+        math: () => {
+          const op = pick(["+", "-", "*"], rng);
+          const answer = op === "+" ? a + b : op === "-" ? a - b : a * b;
+          return {
+            ...common,
+            kind: "math",
+            title: "Калькулятор ядра",
+            shortTitle: "математика",
+            story: "Ядро города просит вычислить параметр мощности. Можно записать выражение или готовый ответ.",
+            goal: `Создай переменную result, равную ${a} ${op} ${b}.`,
+            lesson: `Python считает прямо в коде: <code>result = ${a} ${op} ${b}</code>. Результат можно вывести через <code>print(result)</code>.`,
+            starter: "# Посчитай result\n",
+            sample: `result = ${a} ${op} ${b}\nprint(result)`,
+            chips: ["числа", op, "result"],
+            hints: [`Нужна переменная result.`, `Можно написать result = ${a} ${op} ${b}.`, `Итоговое значение должно быть ${answer}.`],
+            success: "Калькулятор ядра принял ответ.",
+            validate: code => assignmentEvaluatesTo(code, "result", answer)
+          };
+        },
+
+        strings: () => ({
+          ...common,
+          kind: "strings",
+          title: "Текстовый маяк",
+          shortTitle: "строка",
+          story: "Маяк отправляет сообщение другим районам. Нужно сохранить текст в переменную и вывести её.",
+          goal: `Создай ${strVar} = "${word}" и выведи ${strVar} через print().`,
+          lesson: `Строка — это текст в кавычках. Её можно сохранить: <code>${strVar} = "${word}"</code>, а потом вывести: <code>print(${strVar})</code>.`,
+          starter: `# Сохрани текст в ${strVar} и выведи\n`,
+          sample: `${strVar} = "${word}"\nprint(${strVar})`,
+          chips: ["строка", "переменная", "print"],
+          hints: [`Переменная называется ${strVar}.`, `Значение строки: "${word}".`, `После создания переменной используй print(${strVar}).`],
+          success: "Маяк отправил сообщение.",
+          validate: code => hasStringAssignment(code, strVar, word) && hasPrintVariable(code, strVar)
+        }),
+
+        if: () => {
+          const flag = pick(["has_key", "is_ready", "door_open", "power_on"], rng);
+          return {
+            ...common,
+            kind: "if",
+            title: "Сканер доступа",
+            shortTitle: "if",
+            story: "Дверь не должна открываться просто так. Её надо открыть только если условие истинное.",
+            goal: `Создай ${flag} = True. Затем напиши if ${flag}: и внутри вызови ${action}().`,
+            lesson: `Условие <code>if</code> запускает блок кода только при истине. После <code>:</code> нужен отступ.`,
+            starter: "# Напиши условие доступа\n",
+            sample: `${flag} = True\n\nif ${flag}:\n    ${action}()`,
+            chips: ["if", "True", "отступ"],
+            hints: [`Сначала ${flag} = True.`, `Потом if ${flag}:`, `Внутри с отступом: ${action}()`],
+            success: "Сканер выполнил действие.",
+            validate: code => hasAssignmentValue(code, flag, true) && hasIfAction(code, flag, action)
+          };
+        },
+
+        loops: () => ({
+          ...common,
+          kind: "loops",
+          title: "Конвейер",
+          shortTitle: "цикл for",
+          story: "Конвейер должен повторить одно и то же действие несколько раз.",
+          goal: `С помощью for и range(${n}) вызови ${action}() ${n} раз.`,
+          lesson: `Цикл <code>for i in range(${n}):</code> повторяет блок кода ${n} раз. Внутри нужен отступ.`,
+          starter: "# Повтори действие циклом\n",
+          sample: `for i in range(${n}):\n    ${action}()`,
+          chips: ["for", "range()", "повторение"],
+          hints: [`Используй range(${n}).`, `Строка цикла: for i in range(${n}):`, `Внутри с отступом: ${action}()`],
+          success: "Конвейер завершил повторения.",
+          validate: code => hasForAction(code, n, action)
+        }),
+
+        lists: () => {
+          const items = unique([word, word2, pick(WORDS, rng)]).slice(0, 3);
+          return {
+            ...common,
+            kind: "lists",
+            title: "Склад запчастей",
+            shortTitle: "список",
+            story: "Склад должен хранить несколько предметов сразу. Для этого нужен список.",
+            goal: `Создай список ${listName}, где есть строки: ${items.join(", ")}.`,
+            lesson: `Список пишется в квадратных скобках: <code>${listName} = ["${items[0]}", "${items[1]}"]</code>.`,
+            starter: `# Создай список ${listName}\n`,
+            sample: `${listName} = [${items.map(x => `"${x}"`).join(", ")}]\nprint(${listName})`,
+            chips: ["список", "[]", "элементы"],
+            hints: [`Имя списка: ${listName}.`, "Элементы должны быть строками в кавычках.", `В списке должны быть: ${items.join(", ")}.`],
+            success: "Склад получил список предметов.",
+            validate: code => listHasItems(code, listName, items)
+          };
+        },
+
+        functions: () => ({
+          ...common,
+          kind: "functions",
+          title: "Команда ремонта",
+          shortTitle: "функция",
+          story: "Инженеры хотят запускать команду одной строкой. Для этого нужна функция.",
+          goal: `Создай функцию ${funcName}(), внутри выведи "${text}", затем вызови ${funcName}().`,
+          lesson: `Функция создаётся через <code>def</code>. Внутри нужен отступ. Потом функцию надо вызвать по имени.`,
+          starter: "# Создай функцию и вызови её\n",
+          sample: `def ${funcName}():\n    print("${text}")\n\n${funcName}()`,
+          chips: ["def", "функция", "вызов"],
+          hints: [`Начни с def ${funcName}():`, `Внутри функции: print("${text}")`, `Не забудь вызвать: ${funcName}()`],
+          success: "Функция добавлена и запущена.",
+          validate: code => hasFunctionPrintAndCall(code, funcName, text)
+        }),
+
+        dicts: () => {
+          const key = pick(["energy", "name", "status", "zone", "code"], rng);
+          const value = key === "energy" ? a : word;
+          return {
+            ...common,
+            kind: "dicts",
+            title: "Паспорт робота",
+            shortTitle: "словарь",
+            story: "Роботу нужен паспорт с параметрами. Для пары ключ-значение подходит словарь.",
+            goal: `Создай словарь bot, где ключ "${key}" имеет значение ${typeof value === "number" ? value : `"${value}"`}.`,
+            lesson: `Словарь хранит пары: <code>{"ключ": "значение"}</code>. Например: <code>bot = {"name": "drone"}</code>.`,
+            starter: "# Создай словарь bot\n",
+            sample: `bot = {"${key}": ${typeof value === "number" ? value : `"${value}"`}}\nprint(bot)`,
+            chips: ["dict", "ключ", "значение"],
+            hints: [`Имя словаря: bot.`, `Ключ: "${key}".`, `Значение: ${typeof value === "number" ? value : `"${value}"`}.`],
+            success: "Паспорт робота создан.",
+            validate: code => dictHasPair(code, "bot", key, value)
+          };
+        },
+
+        mixed: () => ({
+          ...common,
+          kind: "mixed",
+          title: "Комбо-запуск",
+          shortTitle: "комбо",
+          story: "Город просит смешать переменную, условие и цикл. Это уже похоже на настоящую программу.",
+          goal: `Создай ${varName} = ${n}. Если ${varName} > 0, циклом for i in range(${varName}) вызови ${action}().`,
+          lesson: `Комбо-код объединяет несколько идей: переменная хранит число, <code>if</code> проверяет, <code>for</code> повторяет.`,
+          starter: "# Комбо-задание\n",
+          sample: `${varName} = ${n}\n\nif ${varName} > 0:\n    for i in range(${varName}):\n        ${action}()`,
+          chips: ["переменная", "if", "for"],
+          hints: [`Сначала ${varName} = ${n}.`, `Потом if ${varName} > 0:`, `Внутри условия цикл for i in range(${varName}): и действие ${action}().`],
+          success: "Комбо-запуск выполнен.",
+          validate: code => hasAssignmentValue(code, varName, n) && hasIfForAction(code, varName, action)
+        }),
+
+        advanced: () => ({
+          ...common,
+          kind: "advanced",
+          title: "Функция расчёта",
+          shortTitle: "return",
+          story: "Центру управления нужна функция, которая не просто печатает, а возвращает результат.",
+          goal: `Создай функцию double(x), которая возвращает x * 2.`,
+          lesson: `<code>return</code> возвращает значение из функции. Например: <code>def double(x): return x * 2</code>.`,
+          starter: "# Создай функцию double\n",
+          sample: `def double(x):\n    return x * 2\n\nprint(double(${a}))`,
+          chips: ["def", "параметр", "return"],
+          hints: ["Функция называется double.", "У неё один параметр x.", "Внутри нужно return x * 2."],
+          success: "Функция расчёта готова.",
+          validate: code => hasDoubleFunction(code)
+        }),
+
+        projects: () => ({
+          ...common,
+          kind: "projects",
+          title: "Мини-проект района",
+          shortTitle: "проект",
+          story: "Район готовит мини-программу: список задач, цикл и вывод готовности.",
+          goal: `Создай список tasks с "${word}" и "${word2}". Затем циклом for task in tasks: выведи task.`,
+          lesson: `Мини-проект соединяет списки и циклы. Можно пройтись по списку: <code>for task in tasks:</code>.`,
+          starter: "# Мини-проект\n",
+          sample: `tasks = ["${word}", "${word2}"]\n\nfor task in tasks:\n    print(task)`,
+          chips: ["список", "for", "print"],
+          hints: [`Список называется tasks.`, `Внутри должны быть "${word}" и "${word2}".`, "Цикл: for task in tasks:, внутри print(task)."],
+          success: "Мини-проект собран.",
+          validate: code => listHasItems(code, "tasks", [word, word2]) && hasForEachPrint(code, "tasks", "task")
+        })
+      };
+
+      const builder = make[topic.key] || make.print;
+      return builder();
+    }
+
+    function levelTopic(index) {
+      const unit = Math.floor(index / UNIT_SIZE);
+      const pos = index % UNIT_SIZE;
+
+      let unlockedCount;
+      if (unit < 24) {
+        unlockedCount = Math.min(CURRICULUM.length, 1 + Math.floor(unit / 2));
+      } else {
+        unlockedCount = CURRICULUM.length;
+      }
+
+      const available = CURRICULUM.slice(0, unlockedCount);
+      const primary = available[available.length - 1];
+
+      if (pos === 4 || pos === 9 || pos === 14) {
+        return available[Math.max(0, available.length - 1 - ((pos / 5) | 0))] || primary;
+      }
+
+      if (pos === 19 && unlockedCount > 3) {
+        return CURRICULUM[Math.min(CURRICULUM.length - 1, unlockedCount - 1, 9)];
+      }
+
+      if (unit >= 24 && pos % 3 === 0) {
+        return CURRICULUM[(unit + pos) % CURRICULUM.length];
+      }
+
+      return primary;
+    }
+
+    function unitTopic(unit) {
+      const sampleIndex = unit * UNIT_SIZE + Math.min(2, UNIT_SIZE - 1);
+      return levelTopic(sampleIndex);
+    }
+
+    function unitName(unit) {
+      const names = [
+        "Неоновый квартал", "Старая станция", "Башня данных", "Склад дронов", "Лаборатория",
+        "Робо-порт", "Завод деталей", "Кибер-рынок", "Энергоузел", "Северный мост"
+      ];
+      return names[unit % names.length];
+    }
+
+    function buildOutput(code, level) {
+      const lines = [];
+      lines.push("=== Консоль ===");
+
+      const printed = simulatePrints(code);
+      const events = simulateEvents(code);
+
+      if (printed.length === 0 && events.length === 0) {
+        lines.push("(пока нет вывода)");
+      } else {
+        printed.forEach(line => lines.push(line));
+        events.forEach(event => lines.push(event));
+      }
+
+      lines.push("");
+      lines.push(`Проверяется: ${level.topicTitle}`);
+      return lines.join("\n");
+    }
+
+    function simulatePrints(code) {
+      const clean = stripComments(code);
+      const variables = parseSimpleAssignments(clean);
+      const prints = [];
+
+      const stringRegex = /print\s*\(\s*(["'])([\s\S]*?)\1\s*\)/g;
+      let m;
+      while ((m = stringRegex.exec(clean)) !== null) {
+        prints.push(m[2]);
+      }
+
+      const varRegex = /print\s*\(\s*([a-zA-Z_]\w*)\s*\)/g;
+      while ((m = varRegex.exec(clean)) !== null) {
+        const name = m[1];
+        if (Object.prototype.hasOwnProperty.call(variables, name)) {
+          prints.push(String(variables[name]));
+        }
+      }
+
+      const callRegex = /print\s*\(\s*([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\)/g;
+      while ((m = callRegex.exec(clean)) !== null) {
+        if (m[1] === "double") {
+          const value = Number(m[2].trim());
+          if (!Number.isNaN(value)) prints.push(String(value * 2));
+        }
+      }
+
+      return prints;
+    }
+
+    function simulateEvents(code) {
+      const events = [];
+      ACTIONS.forEach(action => {
+        if (new RegExp(`\\b${action}\\s*\\(\\s*\\)`).test(code)) {
+          events.push(`⚙️ ${action}() → действие выполнено`);
+        }
+      });
+      return events;
+    }
+
+    function stripComments(code) {
+      return code
+        .split("\n")
+        .map(line => line.replace(/#.*$/, ""))
+        .join("\n");
+    }
+
+    function escapeRegex(value) {
+      return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function compact(code) {
+      return stripComments(code).replace(/[ \t]+/g, " ").trim();
+    }
+
+    function hasPrintText(code, text) {
+      const re = new RegExp(`print\\s*\\(\\s*["']${escapeRegex(text)}["']\\s*\\)`);
+      const ok = re.test(code);
+      return response(ok, ok ? "Точный текст выведен." : `Нужно вывести ровно: ${text}`);
+    }
+
+    function parseSimpleAssignments(code) {
+      const vars = {};
+      const re = /^\s*([a-zA-Z_]\w*)\s*=\s*(True|False|-?\d+(?:\.\d+)?|["'][^"']*["'])\s*$/gm;
+      let m;
+
+      while ((m = re.exec(code)) !== null) {
+        const raw = m[2];
+        if (raw === "True") vars[m[1]] = true;
+        else if (raw === "False") vars[m[1]] = false;
+        else if (/^["']/.test(raw)) vars[m[1]] = raw.slice(1, -1);
+        else vars[m[1]] = Number(raw);
+      }
+
+      return vars;
+    }
+
+    function hasAssignmentValue(code, name, value) {
+      const vars = parseSimpleAssignments(code);
+      const ok = vars[name] === value;
+      return response(ok, ok ? "Переменная создана правильно." : `Проверь переменную ${name}.`);
+    }
+
+    function hasStringAssignment(code, name, value) {
+      const vars = parseSimpleAssignments(code);
+      return vars[name] === value;
+    }
+
+    function hasPrintVariable(code, name) {
+      const re = new RegExp(`print\\s*\\(\\s*${escapeRegex(name)}\\s*\\)`);
+      return re.test(code);
+    }
+
+    function assignmentEvaluatesTo(code, name, expected) {
+      const clean = stripComments(code);
+      const re = new RegExp(`^\\s*${escapeRegex(name)}\\s*=\\s*([^\\n]+)`, "m");
+      const match = clean.match(re);
+      if (!match) return response(false, `Нужна переменная ${name}.`);
+
+      const expr = match[1].trim();
+      const safe = /^[0-9+\-*/% ().]+$/.test(expr);
+
+      if (!safe) {
+        return response(false, "В выражении должны быть только числа и математические операции.");
+      }
+
+      try {
+        const value = Function(`"use strict"; return (${expr});`)();
+        const ok = Number(value) === expected;
+        return response(ok, ok ? "Математика совпала." : `Результат должен быть ${expected}.`);
+      } catch {
+        return response(false, "Не смог прочитать математическое выражение.");
+      }
+    }
+
+    function hasIfAction(code, flag, action) {
+      const re = new RegExp(`if\\s+${escapeRegex(flag)}\\s*:\\s*\\n[ \\t]+${escapeRegex(action)}\\s*\\(\\s*\\)`);
+      const ok = re.test(code);
+      return response(ok, ok ? "Условие и действие найдены." : "Проверь if, двоеточие и отступ.");
+    }
+
+    function hasForAction(code, n, action) {
+      const re = new RegExp(`for\\s+\\w+\\s+in\\s+range\\s*\\(\\s*${n}\\s*\\)\\s*:\\s*\\n[ \\t]+${escapeRegex(action)}\\s*\\(\\s*\\)`);
+      const ok = re.test(code);
+      return response(ok, ok ? "Цикл повторяет действие." : `Нужен цикл for ... range(${n}) и действие с отступом.`);
+    }
+
+    function listHasItems(code, name, items) {
+      const re = new RegExp(`${escapeRegex(name)}\\s*=\\s*\\[([\\s\\S]*?)\\]`);
+      const match = code.match(re);
+      if (!match) return response(false, `Нужен список ${name}.`);
+
+      const inside = match[1];
+      const found = [];
+      const itemRe = /["']([^"']+)["']/g;
+      let m;
+      while ((m = itemRe.exec(inside)) !== null) found.push(m[1]);
+
+      const ok = items.every(item => found.includes(item));
+      return response(ok, ok ? "Список содержит нужные элементы." : "В списке не хватает нужных строк.");
+    }
+
+    function hasFunctionPrintAndCall(code, name, text) {
+      const defRe = new RegExp(`def\\s+${escapeRegex(name)}\\s*\\(\\s*\\)\\s*:\\s*\\n[ \\t]+print\\s*\\(\\s*["']${escapeRegex(text)}["']\\s*\\)`);
+      const cleanWithoutDef = code.replace(defRe, "");
+      const callRe = new RegExp(`(^|\\n)\\s*${escapeRegex(name)}\\s*\\(\\s*\\)`);
+      const ok = defRe.test(code) && callRe.test(cleanWithoutDef);
+      return response(ok, ok ? "Функция создана и вызвана." : "Проверь def, print внутри функции и отдельный вызов функции.");
+    }
+
+    function dictHasPair(code, dictName, key, value) {
+      const re = new RegExp(`${escapeRegex(dictName)}\\s*=\\s*\\{([\\s\\S]*?)\\}`);
+      const match = code.match(re);
+      if (!match) return response(false, `Нужен словарь ${dictName}.`);
+
+      const valPattern = typeof value === "number" ? `${value}` : `["']${escapeRegex(value)}["']`;
+      const pairRe = new RegExp(`["']${escapeRegex(key)}["']\\s*:\\s*${valPattern}`);
+      const ok = pairRe.test(match[1]);
+      return response(ok, ok ? "Словарь содержит нужную пару." : "Проверь ключ и значение в словаре.");
+    }
+
+    function hasIfForAction(code, varName, action) {
+      const re = new RegExp(`if\\s+${escapeRegex(varName)}\\s*>\\s*0\\s*:\\s*\\n[ \\t]+for\\s+\\w+\\s+in\\s+range\\s*\\(\\s*${escapeRegex(varName)}\\s*\\)\\s*:\\s*\\n[ \\t]+[ \\t]+${escapeRegex(action)}\\s*\\(\\s*\\)`);
+      const ok = re.test(code);
+      return response(ok, ok ? "Комбо-код найден." : "Проверь вложенность: if → for → действие.");
+    }
+
+    function hasDoubleFunction(code) {
+      const re1 = /def\s+double\s*\(\s*x\s*\)\s*:\s*\n[ \t]+return\s+x\s*\*\s*2/;
+      const re2 = /def\s+double\s*\(\s*x\s*\)\s*:\s*\n[ \t]+return\s*2\s*\*\s*x/;
+      const ok = re1.test(code) || re2.test(code);
+      return response(ok, ok ? "Функция double возвращает x * 2." : "Нужна функция double(x) с return x * 2.");
+    }
+
+    function hasForEachPrint(code, listName, itemName) {
+      const re = new RegExp(`for\\s+${escapeRegex(itemName)}\\s+in\\s+${escapeRegex(listName)}\\s*:\\s*\\n[ \\t]+print\\s*\\(\\s*${escapeRegex(itemName)}\\s*\\)`);
+      const ok = re.test(code);
+      return response(ok, ok ? "Цикл проходит по списку и выводит элементы." : "Проверь цикл for task in tasks: и print(task).");
+    }
+
+    function response(ok, message) {
+      return { ok, message };
+    }
+
+    function unique(arr) {
+      return [...new Set(arr)];
+    }
+
+    function pick(arr, rng) {
+      return arr[Math.floor(rng() * arr.length)];
+    }
+
+    function mulberry32(seed) {
+      return function() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function showToast(text) {
+      els.toast.textContent = text;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        els.toast.classList.remove("show");
+      }, 3000);
+    }
+
+    function shake(element) {
+      element.animate(
+        [
+          { transform: "translateX(0)" },
+          { transform: "translateX(-8px)" },
+          { transform: "translateX(8px)" },
+          { transform: "translateX(-5px)" },
+          { transform: "translateX(0)" }
+        ],
+        {
+          duration: 330,
+          easing: "ease-out"
+        }
+      );
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "name": "Кодоград 2077 — Python",
+  "short_name": "Кодоград",
+  "description": "Python-тренажёр в стиле Duolingo: 1200 уровней, звёзды, магазин и офлайн-режим.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070914",
+  "theme_color": "#070914",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "education",
+    "games",
+    "developer"
+  ],
+  "lang": "ru"
+}
